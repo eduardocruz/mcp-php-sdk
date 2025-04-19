@@ -1,6 +1,6 @@
 <?php
 
-namespace MCP\Protocol\Resources;
+namespace ModelContextProtocol\Protocol\Resources;
 
 /**
  * Manages resources for the MCP server

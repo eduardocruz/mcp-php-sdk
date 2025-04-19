@@ -1,6 +1,6 @@
 <?php
 
-namespace MCP\Protocol\Resources;
+namespace ModelContextProtocol\Protocol\Resources;
 
 /**
  * Implementation of RFC 6570 URI Templates

@@ -1,6 +1,6 @@
 <?php
 
-namespace MCP\Server\Tools;
+namespace ModelContextProtocol\Server\Tools;
 
 /**
  * Represents a response from a tool execution

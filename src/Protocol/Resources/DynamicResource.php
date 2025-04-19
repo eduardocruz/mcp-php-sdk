@@ -1,6 +1,6 @@
 <?php
 
-namespace MCP\Protocol\Resources;
+namespace ModelContextProtocol\Protocol\Resources;
 
 /**
  * A dynamic resource with content determined by a handler function

@@ -18,14 +18,10 @@ A PHP implementation of the [Model Context Protocol (MCP)](https://modelcontextp
     - [Tools](#tools)
     - [Prompts](#prompts)
   - [Running Your Server](#running-your-server)
-    - [stdio](#stdio)
-    - [HTTP with Streaming](#http-with-streaming)
-    - [Testing and Debugging](#testing-and-debugging)
-  - [Examples](#examples)
-  - [Advanced Usage](#advanced-usage)
+    - [stdio Transport](#stdio-transport)
+  - [Documentation](#documentation)
+  - [Support](#-support)
   - [Contributing](#contributing)
-  - [Support](#support)
-    - [Ways to Support](#ways-to-support)
   - [License](#license)
 
 ## Overview
@@ -34,13 +30,13 @@ The Model Context Protocol allows applications to provide context for LLMs in a 
 
 - Build MCP clients that can connect to any MCP server
 - Create MCP servers that expose resources, prompts, and tools
-- Use standard transports like stdio and HTTP with streaming
+- Use standard transports like stdio
 - Handle all MCP protocol messages and lifecycle events
 
 ## Installation
 
 ```bash
-composer require modelcontextprotocol/sdk
+composer require eduardocruz/mcp-php-sdk
 ```
 
 > **Note:** Requires PHP 8.1 or higher.
@@ -56,13 +52,13 @@ require_once 'vendor/autoload.php';
 
 use ModelContextProtocol\Server\McpServer;
 use ModelContextProtocol\Transport\StdioTransport;
-use ModelContextProtocol\Server\Resources\ResourceTemplate;
+use ModelContextProtocol\Protocol\Resources\ResourceTemplate;
 
 // Create an MCP server
 $server = new McpServer('Demo', '1.0.0');
 
 // Add an addition tool
-$server->tool('add', [
+$server->registerTool('add', [
     'properties' => [
         'a' => ['type' => 'number'],
         'b' => ['type' => 'number']
@@ -83,15 +79,15 @@ $server->tool('add', [
 });
 
 // Add a dynamic greeting resource
-$server->resource('greeting', new ResourceTemplate(
-    'greeting://{name}',
-    ['list' => null]
-), function(string $uri, array $params) {
+$template = new ResourceTemplate('greeting://{name}');
+$server->registerResourceTemplate('personalized-greeting', $template, function($uri, $params) {
     return [
-        'contents' => [[
-            'uri' => $uri,
-            'text' => "Hello, {$params['name']}!"
-        ]]
+        'content' => [
+            [
+                'type' => 'text',
+                'text' => "Hello, {$params['name']}!"
+            ]
+        ]
     ];
 });
 
@@ -102,12 +98,11 @@ $server->connect($transport);
 
 ## What is MCP?
 
-The [Model Context Protocol (MCP)](https://modelcontextprotocol.io) lets you build servers that expose data and functionality to LLM applications in a secure, standardized way. Think of it like a web API, but specifically designed for LLM interactions. MCP servers can:
+The Model Context Protocol (MCP) lets you build servers that expose data and functionality to LLM applications in a secure, standardized way. Think of it like a web API, but specifically designed for LLM interactions. MCP servers can:
 
 - Expose data through **Resources** (like GET endpoints; they provide information to the LLM's context)
 - Provide functionality through **Tools** (like POST endpoints; they execute code or produce side effects)
 - Define interaction patterns through **Prompts** (reusable templates for LLM interactions)
-- And more!
 
 ## Core Concepts
 
@@ -116,7 +111,7 @@ The [Model Context Protocol (MCP)](https://modelcontextprotocol.io) lets you bui
 The McpServer is your core interface to the MCP protocol. It handles connection management, protocol compliance, and message routing:
 
 ```php
-$server = new McpServer('My App', '1.0.0');
+$server = new ModelContextProtocol\Server\McpServer('My App', '1.0.0');
 ```
 
 ### Resources
@@ -125,32 +120,25 @@ Resources are how you expose data to LLMs. They're similar to GET endpoints in a
 
 ```php
 // Static resource
-$server->resource(
-    'config',
-    'config://app',
-    function(string $uri) {
-        return [
-            'contents' => [[
-                'uri' => $uri,
-                'text' => 'App configuration here'
-            ]]
-        ];
-    }
-);
+$server->registerResource('greeting', 'greeting://hello', [
+    [
+        'type' => 'text',
+        'text' => 'Hello, world!'
+    ]
+]);
 
 // Dynamic resource with parameters
-$server->resource(
-    'user-profile',
-    new ResourceTemplate('users://{userId}/profile', ['list' => null]),
-    function(string $uri, array $params) {
-        return [
-            'contents' => [[
-                'uri' => $uri,
-                'text' => "Profile data for user {$params['userId']}"
-            ]]
-        ];
-    }
-);
+$template = new ModelContextProtocol\Protocol\Resources\ResourceTemplate('greeting://{name}');
+$server->registerResourceTemplate('personalized-greeting', $template, function(string $uri, array $params) {
+    return [
+        'content' => [
+            [
+                'type' => 'text',
+                'text' => "Hello, {$params['name']}!"
+            ]
+        ]
+    ];
+});
 ```
 
 ### Tools
@@ -159,7 +147,7 @@ Tools let LLMs take actions through your server. Unlike resources, tools are exp
 
 ```php
 // Simple tool with parameters
-$server->tool(
+$server->registerTool(
     'calculate-bmi',
     [
         'properties' => [
@@ -174,36 +162,12 @@ $server->tool(
         $bmi = $weightKg / ($heightM * $heightM);
         
         return [
-            'content' => [[
-                'type' => 'text',
-                'text' => (string)$bmi
-            ]]
-        ];
-    }
-);
-
-// Async tool with external API call
-$server->tool(
-    'fetch-weather',
-    [
-        'properties' => [
-            'city' => ['type' => 'string']
-        ],
-        'required' => ['city']
-    ],
-    function(array $params) {
-        $city = $params['city'];
-        $url = "https://api.weather.com/" . urlencode($city);
-        
-        $client = new \GuzzleHttp\Client();
-        $response = $client->get($url);
-        $data = $response->getBody()->getContents();
-        
-        return [
-            'content' => [[
-                'type' => 'text',
-                'text' => $data
-            ]]
+            'content' => [
+                [
+                    'type' => 'text',
+                    'text' => (string)$bmi
+                ]
+            ]
         ];
     }
 );
@@ -214,23 +178,26 @@ $server->tool(
 Prompts are reusable templates that help LLMs interact with your server effectively:
 
 ```php
-$server->prompt(
-    'review-code',
+$server->registerPrompt(
+    'introduction',
     [
         'properties' => [
-            'code' => ['type' => 'string']
+            'name' => ['type' => 'string'],
+            'profession' => ['type' => 'string']
         ],
-        'required' => ['code']
+        'required' => ['name', 'profession']
     ],
     function(array $params) {
         return [
-            'messages' => [[
-                'role' => 'user',
-                'content' => [
-                    'type' => 'text',
-                    'text' => "Please review this code:\n\n{$params['code']}"
+            'messages' => [
+                [
+                    'role' => 'user',
+                    'content' => [
+                        'type' => 'text',
+                        'text' => "Please introduce {$params['name']}, who works as a {$params['profession']}."
+                    ]
                 ]
-            ]]
+            ]
         ];
     }
 );
@@ -238,9 +205,9 @@ $server->prompt(
 
 ## Running Your Server
 
-MCP servers in PHP need to be connected to a transport to communicate with clients. How you start the server depends on the choice of transport:
+MCP servers in PHP need to be connected to a transport to communicate with clients.
 
-### stdio
+### stdio Transport
 
 For command-line tools and direct integrations:
 
@@ -256,95 +223,28 @@ $transport = new StdioTransport();
 $server->connect($transport);
 ```
 
-### HTTP with Streaming
+## Documentation
 
-For remote servers, set up an HTTP transport that handles both client requests and server-to-client notifications:
+For more detailed documentation, please refer to the [docs folder](/docs), which includes:
 
-```php
-use ModelContextProtocol\Server\McpServer;
-use ModelContextProtocol\Transport\HttpTransport;
-use ModelContextProtocol\Storage\InMemoryEventStore;
+- [API Reference](/docs/api-reference/README.md): Comprehensive documentation of all classes and methods
+- [Examples](/docs/examples/README.md): Code examples for common use cases
+- [Guides](/docs/guides/README.md): Installation and getting started guides
+- [Troubleshooting](/docs/troubleshooting/README.md): Common issues and their solutions
 
-// Create a server with HTTP transport
-$server = new McpServer('example-server', '1.0.0');
+## 🚀 Support
 
-// ... set up server resources, tools, and prompts ...
+If you found **MCP PHP SDK** helpful, believe in its potential, or simply want to support meaningful open-source contributions, please consider becoming a sponsor. Your support helps sustain continuous improvements, new features, and ongoing maintenance.
 
-// Set up HTTP transport with session management
-$eventStore = new InMemoryEventStore();
-$transport = new HttpTransport([
-    'eventStore' => $eventStore,
-    'sessionIdGenerator' => function() {
-        return bin2hex(random_bytes(16));
-    }
-]);
+Whether you're actively using **MCP PHP SDK**, exploring its possibilities, or just excited by its mission—your contribution makes a significant difference.
 
-// Start the server
-$server->connect($transport);
-```
+👉 [Become a Sponsor](https://github.com/sponsors/eduardocruz)
 
-### Testing and Debugging
-
-For testing and debugging, we provide utilities to help you validate your implementation:
-
-```php
-use ModelContextProtocol\Debug\TestClient;
-
-// Create a test client
-$client = new TestClient();
-
-// Connect to your server
-$client->connect($server);
-
-// Test a resource
-$result = $client->fetchResource('greeting://world');
-echo $result['contents'][0]['text']; // "Hello, world!"
-
-// Test a tool
-$result = $client->executeTool('add', ['a' => 5, 'b' => 3]);
-echo $result['content'][0]['text']; // "8"
-```
-
-## Examples
-
-Check out the `examples/` directory for complete examples of different MCP server use cases:
-
-- [Echo Server](examples/echo-server.php): A simple server that echoes input
-- [SQLite Explorer](examples/sqlite-explorer.php): A server that exposes a SQLite database
-- [Web API Integration](examples/web-api.php): A server that wraps external web APIs
-
-## Advanced Usage
-
-For advanced usage scenarios, please refer to the [documentation](https://modelcontextprotocol.io).
+Thank you for empowering open source!
 
 ## Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
-
-## Support
-
-If you find this SDK helpful or believe in its potential, please consider supporting its development. Your support helps maintain continuous improvements, new features, and ongoing maintenance.
-
-### Ways to Support
-
-1. **GitHub Sponsors**
-   - Support the development team directly through [GitHub Sponsors](https://github.com/sponsors/modelcontextprotocol)
-
-2. **Star the Repository**
-   - Give us a star ⭐ on GitHub to increase visibility and show your appreciation
-
-3. **Spread the Word**
-   - Share your experience with the SDK on social media
-   - Write blog posts or tutorials about your use cases
-   - Recommend it to colleagues and friends
-
-4. **Contribute**
-   - Submit bug reports and feature requests
-   - Contribute code improvements
-   - Help improve documentation
-   - Share your use cases and examples
-
-Your support, in any form, helps make this project better for everyone. Thank you for being part of our community!
+We welcome contributions! Please feel free to submit a Pull Request.
 
 ## License
 

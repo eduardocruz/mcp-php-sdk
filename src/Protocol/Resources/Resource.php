@@ -1,6 +1,6 @@
 <?php
 
-namespace MCP\Protocol\Resources;
+namespace ModelContextProtocol\Protocol\Resources;
 
 /**
  * Base class for all MCP resources

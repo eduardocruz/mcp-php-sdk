@@ -1,6 +1,6 @@
 <?php
 
-namespace MCP\Server\Tools\Schema;
+namespace ModelContextProtocol\Server\Tools\Schema;
 
 /**
  * Represents the schema for a tool

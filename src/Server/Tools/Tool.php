@@ -1,8 +1,8 @@
 <?php
 
-namespace MCP\Server\Tools;
+namespace ModelContextProtocol\Server\Tools;
 
-use MCP\Server\Tools\Schema\ToolSchema;
+use ModelContextProtocol\Server\Tools\Schema\ToolSchema;
 
 /**
  * Represents a tool that can be executed

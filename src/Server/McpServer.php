@@ -8,10 +8,10 @@ use ModelContextProtocol\Protocol\Models\ServerCapabilities;
 use ModelContextProtocol\Transport\TransportInterface;
 use ModelContextProtocol\Utilities\Logging\LoggerInterface;
 use ModelContextProtocol\Utilities\Logging\ConsoleLogger;
-use MCP\Server\Tools\Schema\ToolSchema;
-use MCP\Server\Tools\Tool;
-use MCP\Server\Tools\ToolManager;
-use MCP\Server\Tools\ToolResponse;
+use ModelContextProtocol\Server\Tools\Schema\ToolSchema;
+use ModelContextProtocol\Server\Tools\Tool;
+use ModelContextProtocol\Server\Tools\ToolManager;
+use ModelContextProtocol\Server\Tools\ToolResponse;
 
 /**
  * High-level MCP server that provides a simpler API for working with resources, tools, and prompts.

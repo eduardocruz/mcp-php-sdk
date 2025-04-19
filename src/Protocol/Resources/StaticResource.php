@@ -1,6 +1,6 @@
 <?php
 
-namespace MCP\Protocol\Resources;
+namespace ModelContextProtocol\Protocol\Resources;
 
 /**
  * A static resource with fixed content

@@ -1,10 +1,10 @@
 <?php
 
-namespace MCP\Server\Tools;
+namespace ModelContextProtocol\Server\Tools;
 
-use MCP\Server\Tools\Schema\ToolSchema;
-use MCP\Server\Tools\Schema\Validator;
-use MCP\Server\Tools\Schema\ValidationException;
+use ModelContextProtocol\Server\Tools\Schema\ToolSchema;
+use ModelContextProtocol\Server\Tools\Schema\Validator;
+use ModelContextProtocol\Server\Tools\Schema\ValidationException;
 
 /**
  * Manages tool registration, discovery, and execution
