@@ -6,23 +6,27 @@ A PHP implementation of the [Model Context Protocol (MCP)](https://modelcontextp
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [What is MCP?](#what-is-mcp)
-- [Core Concepts](#core-concepts)
-  - [Server](#server)
-  - [Resources](#resources)
-  - [Tools](#tools)
-  - [Prompts](#prompts)
-- [Running Your Server](#running-your-server)
-  - [stdio](#stdio)
-  - [HTTP with Streaming](#http-with-streaming)
-  - [Testing and Debugging](#testing-and-debugging)
-- [Examples](#examples)
-- [Advanced Usage](#advanced-usage)
-- [Contributing](#contributing)
-- [License](#license)
+- [MCP PHP SDK](#mcp-php-sdk)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Installation](#installation)
+  - [Quick Start](#quick-start)
+  - [What is MCP?](#what-is-mcp)
+  - [Core Concepts](#core-concepts)
+    - [Server](#server)
+    - [Resources](#resources)
+    - [Tools](#tools)
+    - [Prompts](#prompts)
+  - [Running Your Server](#running-your-server)
+    - [stdio](#stdio)
+    - [HTTP with Streaming](#http-with-streaming)
+    - [Testing and Debugging](#testing-and-debugging)
+  - [Examples](#examples)
+  - [Advanced Usage](#advanced-usage)
+  - [Contributing](#contributing)
+  - [Support](#support)
+    - [Ways to Support](#ways-to-support)
+  - [License](#license)
 
 ## Overview
 
@@ -316,6 +320,31 @@ For advanced usage scenarios, please refer to the [documentation](https://modelc
 ## Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+## Support
+
+If you find this SDK helpful or believe in its potential, please consider supporting its development. Your support helps maintain continuous improvements, new features, and ongoing maintenance.
+
+### Ways to Support
+
+1. **GitHub Sponsors**
+   - Support the development team directly through [GitHub Sponsors](https://github.com/sponsors/modelcontextprotocol)
+
+2. **Star the Repository**
+   - Give us a star ⭐ on GitHub to increase visibility and show your appreciation
+
+3. **Spread the Word**
+   - Share your experience with the SDK on social media
+   - Write blog posts or tutorials about your use cases
+   - Recommend it to colleagues and friends
+
+4. **Contribute**
+   - Submit bug reports and feature requests
+   - Contribute code improvements
+   - Help improve documentation
+   - Share your use cases and examples
+
+Your support, in any form, helps make this project better for everyone. Thank you for being part of our community!
 
 ## License
 
