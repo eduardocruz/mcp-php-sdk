@@ -1,0 +1,375 @@
+<context>
+# Overview
+The Model Context Protocol (MCP) PHP SDK is a PHP implementation of the official MCP specification (2025-03-26). This SDK enables PHP applications to integrate with LLM applications through a standardized protocol for exchanging context, tools, and prompts. The PHP SDK will be functionally equivalent to the TypeScript SDK while leveraging PHP's strengths and ecosystem.
+
+The MCP is an open protocol that enables seamless integration between LLM applications and external data sources and tools. It provides a standardized way to:
+- Share contextual information with language models
+- Expose tools and capabilities to AI systems
+- Build composable integrations and workflows
+
+# Core Features
+## Protocol Implementation
+- Complete implementation of MCP protocol (2025-03-26)
+- JSON-RPC 2.0 message handling with MCP extensions
+- Support for both stdio and HTTP transports with streaming
+- Full lifecycle management (initialization, operation, shutdown)
+
+## Server Capabilities
+- Resource exposure: Share data through URI-addressable content
+- Tool registration: Allow LLMs to perform actions and computations
+- Prompt templates: Define reusable interaction patterns
+- Capability negotiation: Progressive feature adoption
+
+## Client Features
+- Sampling support: Handle server-initiated LLM interactions
+- Root directory management: Navigate and organize resources
+
+## Utilities
+- Cancellation: Stop long-running operations
+- Progress reporting: Track operation status
+- Logging: Standardized message logging
+- Authorization: OAuth flow for HTTP transport
+
+# User Experience
+## User Personas
+1. **PHP Application Developers** who want to integrate AI capabilities into existing PHP applications
+2. **AI/LLM Engineers** who need to connect PHP backends to LLM systems
+3. **Enterprise Developers** requiring standardized, secure API access to LLM functionality
+
+## Key User Flows
+1. **Server Creation**: Define resources, tools, and prompts that LLMs can access
+2. **Client Integration**: Connect to MCP servers and consume their capabilities
+3. **Composable Workflows**: Combine multiple MCP servers for complex AI integrations
+
+## UX Considerations
+- Simple, fluent PHP API design following PHP best practices
+- Clear error messages and exception handling
+- Comprehensive documentation with examples
+- Support for modern PHP features (8.1+)
+</context>
+<PRD>
+# Technical Architecture
+## System Components
+1. **Protocol Layer**
+   - JSON-RPC 2.0 message handling
+   - Message serialization/deserialization
+   - Session management
+
+2. **Transport Layer**
+   - stdio transport for command-line tools
+   - HTTP transport with streaming (SSE support)
+   - Session resumability and reconnection logic
+
+3. **Server Implementation**
+   - Resource management and URI template handling
+   - Tool registration and execution
+   - Prompt template management
+   - Capability negotiation and advertisement
+
+4. **Client Implementation**
+   - Server connection and session management
+   - Sampling callback handling
+   - Root directory organization
+
+5. **Utility Components**
+   - Authorization management (OAuth)
+   - Cancellation support
+   - Progress reporting
+   - Logging infrastructure
+
+## Data Models
+1. **Message Models**
+   - JsonRpcMessage (base class)
+   - Request
+   - Response
+   - Notification
+   - ErrorData
+
+2. **Resource Models**
+   - ResourceTemplate
+   - ResourceContent
+   - ResourceList
+
+3. **Tool Models**
+   - ToolSchema
+   - ToolParameters
+   - ToolResponse
+
+4. **Protocol Models**
+   - Capabilities
+   - InitializeParams
+   - InitializeResult
+
+## APIs and Integrations
+1. **Core APIs**
+   - Server API for exposing capabilities
+   - Client API for consuming capabilities
+   - Transport API for communication
+
+2. **External Dependencies**
+   - HTTP client library (e.g., Guzzle)
+   - Validation library (e.g., Symfony Validator)
+   - Event handling for async operations
+
+3. **Extension Points**
+   - Custom transport implementations
+   - Schema validation extensions
+   - Authorization strategy customization
+
+## Infrastructure Requirements
+1. **PHP Environment**
+   - PHP 8.1+ runtime
+   - Composer for dependency management
+   - PSR-compatible logging
+
+2. **Optional Components**
+   - ReactPHP or Swoole for asynchronous support
+   - SSE library for HTTP streaming
+   - Session storage for persistent connections
+
+# Development Roadmap
+## Phase 1: Foundation (MVP)
+1. **Core Protocol Implementation**
+   - JSON-RPC 2.0 message classes
+   - Basic message serialization/deserialization
+   - Error handling framework
+
+2. **Transport Layer - Basic**
+   - stdio transport implementation
+   - Simple HTTP transport (non-streaming)
+   - Transport interface definition
+
+3. **Server Foundations**
+   - Server class with initialization support
+   - Basic capability negotiation
+   - Simple resource handling
+   - Basic tool execution
+
+4. **Documentation**
+   - API documentation
+   - Basic examples
+   - Installation guide
+
+## Phase 2: Core Features
+1. **Enhanced Server Features**
+   - Complete resource implementation
+   - Full tool support with parameter validation
+   - Prompt template handling
+   - Subscription notifications
+
+2. **Transport Layer - Advanced**
+   - HTTP streaming with SSE
+   - Session management and resumability
+   - Connection lifecycle handling
+
+3. **Client Implementation**
+   - Client connection logic
+   - Resource fetching
+   - Tool invocation
+   - Basic sampling support
+
+4. **Utilities - Basic**
+   - Request cancellation
+   - Simple progress reporting
+   - Basic logging
+
+## Phase 3: Advanced Features
+1. **Advanced Client Features**
+   - Full sampling implementation
+   - Root directory management
+   - Resource subscription handling
+
+2. **Security Features**
+   - OAuth authorization flow
+   - Token management
+   - Secure parameter validation
+
+3. **Performance Optimizations**
+   - Connection pooling
+   - Message batching
+   - Memory optimization
+
+4. **Asynchronous Support**
+   - Promise-based async operations
+   - Parallel request handling
+   - Event-driven architecture
+
+## Phase 4: Ecosystem
+1. **Framework Integrations**
+   - Laravel integration package
+   - Symfony integration package
+   - Generic PSR integration
+
+2. **Testing Tools**
+   - Mock server implementation
+   - Test client implementation
+   - Protocol conformance tests
+
+3. **Monitoring and Observability**
+   - Detailed logging
+   - Performance metrics
+   - Debugging tools
+
+4. **Comprehensive Documentation**
+   - Advanced usage patterns
+   - Integration examples
+   - Performance tuning guide
+
+# Protocol Compatibility and Verification
+
+To ensure complete compatibility with the MCP specification and feature parity with the TypeScript SDK, we will implement a systematic approach to verification and testing.
+
+## Protocol Conformance Strategy
+
+1. **Specification-First Implementation**
+   - Use the official MCP specification (2025-03-26) as the primary source of truth
+   - Implement every required protocol feature described in the spec
+   - Reference the TypeScript SDK for implementation patterns but not as the sole guide
+
+2. **Comprehensive Protocol Test Suite**
+   - Create validation tests for all message types and flows
+   - Verify correct handling of edge cases and error conditions
+   - Test both client-to-server and server-to-client communication
+
+3. **Direct Interoperability Testing**
+   - Test PHP client ↔ TypeScript server communication
+   - Test TypeScript client ↔ PHP server communication
+   - Verify all protocol messages are correctly handled in both directions
+
+## Feature Parity Verification
+
+1. **Feature Matrix Implementation**
+   - Create a comprehensive feature matrix listing all TypeScript SDK capabilities
+   - Implement verification tests for each feature
+   - Automatically test each feature during the CI process
+
+2. **Message Format Verification**
+   - Develop test scripts to generate all protocol messages in TypeScript
+   - Parse these messages in PHP and verify structure matches
+   - Generate equivalent messages in PHP and verify they parse correctly in TypeScript
+
+3. **API Compatibility Testing**
+   - Ensure PHP public APIs match the TypeScript equivalents
+   - Validate that function signatures and parameter requirements align
+   - Provide compatibility layers where PHP and TypeScript paradigms differ
+
+## Continuous Compatibility Assurance
+
+1. **Automated Compatibility Testing**
+   - Set up CI/CD pipelines that run TypeScript/PHP interoperability tests
+   - Generate compatibility reports for each build
+   - Block releases that break protocol compatibility
+
+2. **Version Synchronization**
+   - Maintain version parity with the TypeScript SDK where possible
+   - Document any version differences clearly
+   - Provide migration guides for version transitions
+
+3. **Protocol Specification Tracking**
+   - Monitor MCP specification updates
+   - Implement specification changes promptly
+   - Maintain backwards compatibility when possible
+
+## Verification Tooling
+
+1. **Protocol Validator Tool**
+   - Implement a dedicated tool for validating protocol compliance
+   - Provide CLI and programmatic interfaces for validation
+   - Use in development and CI environments
+
+2. **Compatibility Test Runner**
+   - Create a test runner for cross-implementation testing
+   - Support both local and CI-based testing
+   - Generate detailed reports on compatibility status
+
+3. **Reference Implementation Comparison**
+   - Automatically compare behavior against the TypeScript reference implementation
+   - Highlight any behavioral differences
+   - Provide clear resolution paths for discrepancies
+
+# Logical Dependency Chain
+## Foundation Layer
+1. Message handling (JSON-RPC 2.0)
+2. Basic transport (stdio)
+3. Server initialization
+4. Simple resource handling
+
+## Building Blocks
+1. Complete server implementation (depends on foundation)
+2. Enhanced transport with HTTP (depends on message handling)
+3. Tool implementation (depends on server implementation)
+4. Client connection logic (depends on transport)
+
+## Advanced Features
+1. Streaming support (depends on HTTP transport)
+2. Sampling implementation (depends on client connection)
+3. Authorization (depends on HTTP transport)
+4. Resource subscriptions (depends on streaming)
+
+## Extensions
+1. Async support (depends on streaming and client implementation)
+2. Framework integrations (depends on complete SDK implementation)
+3. Monitoring tools (depends on logging infrastructure)
+
+# Risks and Mitigations
+## Technical Challenges
+1. **Asynchronous Operations in PHP**
+   - Risk: PHP's synchronous nature makes async operations challenging
+   - Mitigation: Leverage ReactPHP or Swoole; provide both sync and async APIs
+
+2. **HTTP Streaming/SSE Support**
+   - Risk: Long-lived HTTP connections can be difficult to manage in PHP
+   - Mitigation: Robust connection handling with timeouts and reconnection logic
+
+3. **Type Safety**
+   - Risk: PHP's dynamic typing could lead to runtime errors
+   - Mitigation: Thorough validation; leverage PHP 8.1+ type hints; static analysis tools
+
+## Implementation Challenges
+1. **Protocol Compatibility**
+   - Risk: Subtle differences in implementation could break interoperability
+   - Mitigation: Comprehensive test suite against reference TypeScript implementation
+
+2. **Performance Overhead**
+   - Risk: PHP implementation might have higher overhead than TypeScript
+   - Mitigation: Optimize critical paths; provide caching mechanisms
+
+3. **Dependency Management**
+   - Risk: External dependencies might change or have security issues
+   - Mitigation: Minimal dependencies; strict versioning; regular security audits
+
+## Resource Constraints
+1. **PHP Ecosystem Familiarity**
+   - Risk: Developers might be more familiar with TypeScript than PHP for LLM integration
+   - Mitigation: Comprehensive documentation; familiar API patterns
+
+2. **Maintenance Burden**
+   - Risk: Keeping in sync with TypeScript SDK updates could be challenging
+   - Mitigation: Automated tests for compatibility; modular design for easier updates
+
+3. **Adoption Challenges**
+   - Risk: PHP developers might not be aware of MCP benefits
+   - Mitigation: Clear examples showing integration with popular PHP applications
+
+# Appendix
+## PHP Best Practices
+- Follow PSR-12 coding standards
+- Use namespaces according to PSR-4
+- Implement interfaces for dependency injection
+- Leverage PHP 8.1+ features for improved code quality
+
+## Validation Approach
+- Parameter validation for all user inputs
+- Schema validation for all protocol messages
+- Runtime type checking with helpful error messages
+
+## Performance Considerations
+- Connection pooling for HTTP transport
+- Resource caching strategies
+- Efficient serialization of messages
+
+## Security Measures
+- OAuth 2.0 implementation with PKCE
+- Input validation to prevent injection attacks
+- Rate limiting for HTTP transport
+- Secure handling of credentials
