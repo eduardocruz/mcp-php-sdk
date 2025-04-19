@@ -1,0 +1,12 @@
+# Ignore the reference SDK folder used for validation
+sdk-reference/
+
+# macOS
+.DS_Store 
+
+# Task Master directories
+scripts/
+tasks/ 
+
+# IDE
+.cursor/ 
