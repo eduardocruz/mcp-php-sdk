@@ -1,0 +1,19 @@
+{
+    "name": "eduardocruz/mcp-php-sdk",
+    "description": "PHP implementation of the Model Context Protocol (MCP)",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "ModelContextProtocol\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Eduardo Cruz"
+        }
+    ],
+    "require": {
+        "php": ">=8.1"
+    }
+}

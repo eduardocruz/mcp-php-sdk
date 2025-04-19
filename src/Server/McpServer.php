@@ -332,7 +332,7 @@ class McpServer
                     ]
                 ]
             ];
-        } catch (\MCP\Server\Tools\Schema\ValidationException $e) {
+        } catch (\ModelContextProtocol\Server\Tools\Schema\ValidationException $e) {
             return [
                 'error' => [
                     'message' => 'Parameter validation failed',

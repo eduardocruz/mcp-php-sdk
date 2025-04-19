@@ -10,3 +10,7 @@ tasks/
 
 # IDE
 .cursor/ 
+
+# Composer
+/vendor/
+composer.lock

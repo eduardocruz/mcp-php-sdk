@@ -232,6 +232,16 @@ For more detailed documentation, please refer to the [docs folder](/docs), which
 - [Guides](/docs/guides/README.md): Installation and getting started guides
 - [Troubleshooting](/docs/troubleshooting/README.md): Common issues and their solutions
 
+## Cursor Integration
+
+This SDK includes a [PHPStan MCP Server](/examples/phpstan-mcp-server.php) example that you can connect to Cursor for PHP code analysis. When connected, you can ask Claude to:
+
+- Analyze PHP code for errors using PHPStan
+- Check code quality issues like complexity
+- Scan for potential security vulnerabilities
+
+[Learn more about using the PHPStan MCP Server with Cursor](/examples/README.md)
+
 ## 🚀 Support
 
 If you found **MCP PHP SDK** helpful, believe in its potential, or simply want to support meaningful open-source contributions, please consider becoming a sponsor. Your support helps sustain continuous improvements, new features, and ongoing maintenance.
