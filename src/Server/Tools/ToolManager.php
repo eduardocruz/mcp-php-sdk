@@ -1,0 +1,135 @@
+<?php
+
+namespace MCP\Server\Tools;
+
+use MCP\Server\Tools\Schema\ToolSchema;
+use MCP\Server\Tools\Schema\Validator;
+use MCP\Server\Tools\Schema\ValidationException;
+
+/**
+ * Manages tool registration, discovery, and execution
+ */
+class ToolManager
+{
+    /** @var Tool[] */
+    private array $tools = [];
+    private Validator $validator;
+    
+    /**
+     * Create a new tool manager
+     */
+    public function __construct()
+    {
+        $this->validator = new Validator();
+    }
+    
+    /**
+     * Register a new tool
+     * 
+     * @param string $name The tool name
+     * @param array|ToolSchema $schema The tool schema
+     * @param callable $handler The handler function
+     * @return Tool The registered tool
+     */
+    public function register(
+        string $name,
+        array|ToolSchema $schema,
+        callable $handler
+    ): Tool {
+        // Convert array schema to ToolSchema object if needed
+        if (is_array($schema)) {
+            $schema = ToolSchema::fromArray($name, $schema);
+        }
+        
+        $tool = new Tool($name, $schema, $handler);
+        $this->tools[$name] = $tool;
+        
+        return $tool;
+    }
+    
+    /**
+     * Get a tool by name
+     */
+    public function getTool(string $name): ?Tool
+    {
+        return $this->tools[$name] ?? null;
+    }
+    
+    /**
+     * Get a tool's schema
+     */
+    public function getSchema(string $name): ?ToolSchema
+    {
+        $tool = $this->getTool($name);
+        return $tool ? $tool->getSchema() : null;
+    }
+    
+    /**
+     * Execute a tool with the given parameters
+     * 
+     * @param string $name The tool to execute
+     * @param array $params The parameters for the tool
+     * @return mixed The result of the tool execution
+     * @throws \Exception If the tool is not found
+     * @throws ValidationException If the parameters are invalid
+     */
+    public function execute(string $name, array $params): mixed
+    {
+        $tool = $this->getTool($name);
+        
+        if ($tool === null) {
+            throw new \Exception("Tool not found: $name");
+        }
+        
+        // Validate parameters against schema
+        $this->validator->validate($params, $tool->getSchema());
+        
+        // Execute tool
+        return $tool->execute($params);
+    }
+    
+    /**
+     * List all registered tools
+     * 
+     * @return array The list of tool metadata
+     */
+    public function list(): array
+    {
+        $result = [];
+        
+        foreach ($this->tools as $tool) {
+            $result[] = $tool->getMetadata();
+        }
+        
+        return $result;
+    }
+    
+    /**
+     * Check if a tool exists
+     */
+    public function exists(string $name): bool
+    {
+        return isset($this->tools[$name]);
+    }
+    
+    /**
+     * Get the number of registered tools
+     */
+    public function count(): int
+    {
+        return count($this->tools);
+    }
+    
+    /**
+     * Remove a tool
+     */
+    public function remove(string $name): bool
+    {
+        if (isset($this->tools[$name])) {
+            unset($this->tools[$name]);
+            return true;
+        }
+        
+        return false;
+    }
+}
