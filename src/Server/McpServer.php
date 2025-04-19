@@ -8,6 +8,10 @@ use ModelContextProtocol\Protocol\Models\ServerCapabilities;
 use ModelContextProtocol\Transport\TransportInterface;
 use ModelContextProtocol\Utilities\Logging\LoggerInterface;
 use ModelContextProtocol\Utilities\Logging\ConsoleLogger;
+use MCP\Server\Tools\Schema\ToolSchema;
+use MCP\Server\Tools\Tool;
+use MCP\Server\Tools\ToolManager;
+use MCP\Server\Tools\ToolResponse;
 
 /**
  * High-level MCP server that provides a simpler API for working with resources, tools, and prompts.
@@ -38,9 +42,9 @@ class McpServer
     private array $registeredResourceTemplates = [];
     
     /**
-     * @var array<string, mixed> Registered tools
+     * @var ToolManager The tool manager
      */
-    private array $registeredTools = [];
+    private ToolManager $toolManager;
     
     /**
      * @var array<string, mixed> Registered prompts
@@ -91,6 +95,9 @@ class McpServer
             $this->logger
         );
         
+        // Initialize tool manager
+        $this->toolManager = new ToolManager();
+        
         // Set up initialization callback
         $this->server->onInitialized(function () {
             $this->logger->info('Server fully initialized');
@@ -105,6 +112,16 @@ class McpServer
     public function getServer(): Server
     {
         return $this->server;
+    }
+    
+    /**
+     * Get the tool manager.
+     *
+     * @return ToolManager The tool manager
+     */
+    public function getToolManager(): ToolManager
+    {
+        return $this->toolManager;
     }
     
     /**
@@ -265,11 +282,7 @@ class McpServer
      */
     public function handleToolsList($request): array
     {
-        $tools = [];
-        
-        // In a real implementation, we would return registered tools
-        // This is a placeholder implementation
-        
+        $tools = $this->toolManager->list();
         return ['tools' => $tools];
     }
     
@@ -281,17 +294,60 @@ class McpServer
      */
     public function handleToolsCall($request): array
     {
-        // In a real implementation, we would invoke the tool
-        // This is a placeholder implementation
-        
-        return [
-            'content' => [
-                [
-                    'type' => 'text',
-                    'text' => 'Tool execution result would go here'
+        try {
+            $name = $request->params['name'] ?? null;
+            $params = $request->params['params'] ?? [];
+            
+            if ($name === null) {
+                return [
+                    'error' => [
+                        'message' => 'Missing tool name',
+                        'code' => 'MISSING_TOOL_NAME'
+                    ]
+                ];
+            }
+            
+            if (!$this->toolManager->exists($name)) {
+                return [
+                    'error' => [
+                        'message' => "Tool not found: $name",
+                        'code' => 'TOOL_NOT_FOUND'
+                    ]
+                ];
+            }
+            
+            $result = $this->toolManager->execute($name, $params);
+            
+            // If the result is already a ToolResponse, return its content
+            if ($result instanceof ToolResponse) {
+                return $result->toArray();
+            }
+            
+            // Otherwise, wrap the result in a text response
+            return [
+                'content' => [
+                    [
+                        'type' => 'text',
+                        'text' => (string)$result
+                    ]
                 ]
-            ]
-        ];
+            ];
+        } catch (\MCP\Server\Tools\Schema\ValidationException $e) {
+            return [
+                'error' => [
+                    'message' => 'Parameter validation failed',
+                    'code' => 'VALIDATION_ERROR',
+                    'details' => $e->getErrors()
+                ]
+            ];
+        } catch (\Exception $e) {
+            return [
+                'error' => [
+                    'message' => $e->getMessage(),
+                    'code' => 'EXECUTION_ERROR'
+                ]
+            ];
+        }
     }
     
     /**
@@ -442,5 +498,44 @@ class McpServer
     public function registerLoggingCapabilities(): void
     {
         $this->server->registerCapabilities(new ServerCapabilities(logging: []));
+    }
+    
+    /**
+     * Register a new tool.
+     *
+     * @param string $name The name of the tool
+     * @param array|ToolSchema $schema The schema for the tool
+     * @param callable $handler The handler function for the tool
+     * @return Tool The registered tool
+     */
+    public function registerTool(string $name, array|ToolSchema $schema, callable $handler): Tool
+    {
+        // Ensure tool request handlers are set up
+        $this->setToolRequestHandlers();
+        
+        // Register the tool with the tool manager
+        $tool = $this->toolManager->register($name, $schema, $handler);
+        
+        // Notify clients if connected
+        $this->sendToolListChanged();
+        
+        return $tool;
+    }
+    
+    /**
+     * Unregister a tool.
+     *
+     * @param string $name The name of the tool to unregister
+     * @return bool True if the tool was unregistered
+     */
+    public function unregisterTool(string $name): bool
+    {
+        $result = $this->toolManager->remove($name);
+        
+        if ($result) {
+            $this->sendToolListChanged();
+        }
+        
+        return $result;
     }
 }
