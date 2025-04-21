@@ -28,6 +28,10 @@ A PHP implementation of the [Model Context Protocol (MCP)](https://modelcontextp
 
 The Model Context Protocol allows applications to provide context for LLMs in a standardized way, separating the concerns of providing context from the actual LLM interaction. This PHP SDK implements the full MCP specification (2025-03-26), making it easy to:
 
+![MCP PHP SDK Architecture](diagram.png)
+
+*Diagram created with [GitDiagram](https://gitdiagram.com/eduardocruz/mcp-php-sdk)*
+
 - Build MCP clients that can connect to any MCP server
 - Create MCP servers that expose resources, prompts, and tools
 - Use standard transports like stdio
