@@ -32,10 +32,14 @@ The Model Context Protocol allows applications to provide context for LLMs in a 
 
 *Diagram created with [GitDiagram](https://gitdiagram.com/eduardocruz/mcp-php-sdk)*
 
-- Build MCP clients that can connect to any MCP server
-- Create MCP servers that expose resources, prompts, and tools
-- Use standard transports like stdio
-- Handle all MCP protocol messages and lifecycle events
+- **Build MCP clients** that can connect to any MCP server
+- **Create MCP servers** that expose resources, prompts, and tools
+- **Use standard transports** like stdio with proper message framing
+- **Handle all MCP protocol messages** and lifecycle events
+- **Robust error handling** with standardized JSON-RPC error responses
+- **Advanced resource management** with URI templates and dynamic content
+- **Complete prompts system** for reusable LLM interaction patterns
+- **Production-ready features** including error recovery, logging, and validation
 
 ## Installation
 
@@ -90,6 +94,27 @@ $server->registerResourceTemplate('personalized-greeting', $template, function($
             [
                 'type' => 'text',
                 'text' => "Hello, {$params['name']}!"
+            ]
+        ]
+    ];
+});
+
+// Add a prompt for generating introductions
+$server->registerPrompt('introduction', [
+    'properties' => [
+        'name' => ['type' => 'string'],
+        'profession' => ['type' => 'string']
+    ],
+    'required' => ['name', 'profession']
+], function(array $params) {
+    return [
+        'messages' => [
+            [
+                'role' => 'user',
+                'content' => [
+                    'type' => 'text',
+                    'text' => "Please introduce {$params['name']}, who works as a {$params['profession']}."
+                ]
             ]
         ]
     ];
@@ -226,6 +251,31 @@ $server = new McpServer('example-server', '1.0.0');
 $transport = new StdioTransport();
 $server->connect($transport);
 ```
+
+## Recent Improvements
+
+This SDK has been significantly enhanced with production-ready features:
+
+### ✅ **Standardized Error Handling** (EDU-102)
+- **ErrorResponseBuilder**: Centralized error response creation with JSON-RPC 2.0 compliance
+- **Error Recovery**: Automatic retry mechanisms with exponential backoff and circuit breaker patterns
+- **Enhanced Debugging**: Structured error logging with context and stack traces
+- **MCP-Specific Error Codes**: Extended error codes (-32001 to -32010) for MCP-specific scenarios
+
+### ✅ **Complete Prompts System** (EDU-101)
+- **Full Implementation**: Complete prompts registration, listing, and execution
+- **Schema Validation**: Parameter validation with detailed error reporting
+- **Integration**: Seamlessly integrated with McpServer for production use
+
+### ✅ **Advanced Resource Management** (EDU-100)
+- **Resource Templates**: Dynamic URI pattern matching with parameter extraction
+- **Static & Dynamic Resources**: Support for both static content and computed resources
+- **Full Integration**: Complete resource listing, reading, and template support
+
+### ✅ **Enhanced Infrastructure** (EDU-98, EDU-99)
+- **Improved Message Handling**: Better JSON-RPC message processing and validation
+- **Transport Reliability**: Enhanced stdio transport with proper error handling
+- **Session Management**: Robust connection and session lifecycle management
 
 ## Documentation
 
