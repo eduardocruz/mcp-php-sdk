@@ -1,13 +1,13 @@
 <?php
 
-namespace ModelContextProtocol\Server\Tools\Schema;
+namespace ModelContextProtocol\Server\Prompts\Schema;
 
 use ModelContextProtocol\Server\Schema\SchemaInterface;
 
 /**
- * Represents the schema for a tool
+ * Represents the schema for a prompt
  */
-class ToolSchema implements SchemaInterface
+class PromptSchema implements SchemaInterface
 {
     private string $name;
     private array $properties;
@@ -15,12 +15,12 @@ class ToolSchema implements SchemaInterface
     private ?string $description;
 
     /**
-     * Create a new tool schema
+     * Create a new prompt schema
      * 
-     * @param string $name The name of the tool
-     * @param array $properties The properties of the tool schema
+     * @param string $name The name of the prompt
+     * @param array $properties The properties of the prompt schema
      * @param array $required The required properties
-     * @param string|null $description The tool description
+     * @param string|null $description The prompt description
      */
     public function __construct(
         string $name,
@@ -35,7 +35,7 @@ class ToolSchema implements SchemaInterface
     }
 
     /**
-     * Get the tool name
+     * Get the prompt name
      */
     public function getName(): string
     {
@@ -43,7 +43,7 @@ class ToolSchema implements SchemaInterface
     }
 
     /**
-     * Get the tool properties
+     * Get the prompt properties
      */
     public function getProperties(): array
     {
@@ -59,7 +59,7 @@ class ToolSchema implements SchemaInterface
     }
 
     /**
-     * Get the tool description
+     * Get the prompt description
      */
     public function getDescription(): ?string
     {

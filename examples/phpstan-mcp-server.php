@@ -1,584 +1,214 @@
 <?php
 
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use ModelContextProtocol\Server\McpServer;
+use ModelContextProtocol\Transport\StdioTransport;
+
 /**
- * PHPStan MCP Server Example for Cursor
+ * PHPStan MCP Server
  * 
- * This example follows the same message format as the TypeScript SDK to ensure compatibility with Cursor.
+ * This server provides PHP static analysis tools via MCP, powered by PHPStan.
+ * It offers code analysis, quality checks, and security scanning for PHP code.
  */
 
-// Disable all warnings and notices that might print to stdout
-error_reporting(E_ERROR);
-ini_set('display_errors', 0);
+// Create an MCP server instance
+$server = new McpServer('PHPStan-MCP-Server', '1.0.0');
 
-// Redirect error_log to STDERR so it doesn't interfere with JSON-RPC messages
-ini_set('error_log', 'php://stderr');
+// Enable capabilities for tools, resources, and prompts
+$server->registerToolCapabilities(true);
+$server->registerResourceCapabilities(true, true);
+$server->registerPromptCapabilities(true);
 
-// Simple MCP server for static analysis
-class SimpleMcpServer {
-    private $tools = [];
-    private $initialized = false;
-    private $clientCapabilities = null;
-    
-    public function __construct(private $name, private $version) {
-    }
-    
-    /**
-     * Register a tool with the server
-     */
-    public function registerTool($name, $schema, $handler, $description = '') {
-        $this->tools[$name] = [
-            'name' => $name,
-            'schema' => $schema,
-            'handler' => $handler,
-            'description' => $description ?: "Tool: {$name}"
-        ];
-        return $this;
-    }
-    
-    /**
-     * Process input from STDIN
-     */
-    public function processInput() {
-        // Set a timeout to prevent hanging indefinitely but allow long operations
-        stream_set_timeout(STDIN, 3600); // 1 hour timeout
-        
-        // Set to non-blocking mode to avoid hanging
-        stream_set_blocking(STDIN, false);
-        
-        // Read a line from STDIN
-        $line = fgets(STDIN);
-        
-        // If no data is available yet in non-blocking mode, return true to continue
-        if ($line === false && !feof(STDIN)) {
-            usleep(100000); // Sleep for 100ms to avoid busy waiting
-            return true;
-        }
-        
-        // Check for EOF
-        if ($line === false && feof(STDIN)) {
-            error_log("End of input stream reached, reconnecting...");
-            // Try to reopen STDIN
-            // This is a workaround to handle Cursor's connection management
-            return true;
-        }
-        
-        // Skip empty lines
-        if ($line !== false && trim($line) === '') {
-            return true;
-        }
-        
-        // If we have data to process
-        if ($line !== false) {
-            try {
-                // Parse the JSON message
-                $message = json_decode($line, true);
-                
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    error_log("Error decoding JSON message: " . json_last_error_msg());
-                    error_log("Raw message: " . $line);
-                    return true;
-                }
-                
-                // Handle the message
-                $this->handleMessage($message);
-            } catch (Exception $e) {
-                error_log("Error processing message: " . $e->getMessage());
-                error_log("Exception trace: " . $e->getTraceAsString());
-            }
-        }
-        
-        // Always return true to keep the server running
-        return true;
-    }
-    
-    /**
-     * Handle a JSON-RPC message
-     */
-    private function handleMessage($message) {
-        error_log("Handling message: " . json_encode($message['method'] ?? 'unknown'));
-        
-        // Check if it's a request (has an ID)
-        if (isset($message['id'])) {
-            // Handle requests
-            $method = $message['method'] ?? '';
-            $params = $message['params'] ?? [];
-            
-            switch ($method) {
-                case 'initialize':
-                    $this->handleInitialize($message);
-                    break;
-                    
-                case 'shutdown':
-                    $this->sendResponse($message['id'], null);
-                    break;
-                    
-                case 'tools/list':
-                    $this->handleToolsList($message);
-                    break;
-                    
-                case 'tools/call':
-                    $this->handleToolsCall($message);
-                    break;
-                    
-                case 'analyzers/analyze':
-                    $this->handleAnalyze($message);
-                    break;
-                    
-                default:
-                    $this->sendErrorResponse($message['id'], -32601, "Method not found: {$method}");
-                    break;
-            }
-        } else {
-            // Handle notifications
-            $method = $message['method'] ?? '';
-            
-            switch ($method) {
-                case 'notifications/initialized':
-                    $this->initialized = true;
-                    error_log("Server initialized");
-                    break;
-                    
-                case '$/cancelRequest':
-                    // Handle cancellation - no implementation needed for this example
-                    break;
-                    
-                default:
-                    // Ignore other notifications
-                    break;
-            }
-        }
-    }
-    
-    /**
-     * Handle initialize request
-     */
-    private function handleInitialize($request) {
-        error_log("Handling initialize request");
-        
-        $this->clientCapabilities = $request['params']['capabilities'] ?? [];
-        
-        $result = [
-            'protocolVersion' => $request['params']['protocolVersion'] ?? '2025-03-26',
-            'serverInfo' => [
-                'name' => $this->name,
-                'version' => $this->version
-            ],
-            'capabilities' => [
-                'tools' => [
-                    'list' => true, 
-                    'listChanged' => false,
-                    'call' => true
-                ],
-                'analyzers' => [
-                    'supportedLanguages' => ['php'],
-                    'analyze' => true
-                ]
-            ]
-        ];
-        
-        $this->sendResponse($request['id'], $result);
-    }
-    
-    /**
-     * Handle tools/list request
-     */
-    private function handleToolsList($request) {
-        error_log("Handling tools/list request");
-        
-        // Hard-coded tools for Cursor compatibility
-        $tools = [
-            [
-                'name' => 'phpstan-analyze',
-                'description' => 'Run PHPStan analysis on PHP code',
-                'inputSchema' => json_decode('{
-                    "type": "object",
-                    "properties": {
-                        "code": {"type": "string", "description": "PHP code to analyze"},
-                        "level": {"type": "integer", "description": "Analysis level (0-9)", "default": 5},
-                        "showProgressBar": {"type": "boolean", "description": "Show progress bar", "default": false}
-                    },
-                    "required": ["code"]
-                }')
-            ],
-            [
-                'name' => 'code-quality-check',
-                'description' => 'Check PHP code for quality issues',
-                'inputSchema' => json_decode('{
-                    "type": "object",
-                    "properties": {
-                        "code": {"type": "string", "description": "PHP code to check"}
-                    },
-                    "required": ["code"]
-                }')
-            ],
-            [
-                'name' => 'security-scan',
-                'description' => 'Scan PHP code for security vulnerabilities',
-                'inputSchema' => json_decode('{
-                    "type": "object",
-                    "properties": {
-                        "code": {"type": "string", "description": "PHP code to scan for security issues"}
-                    },
-                    "required": ["code"]
-                }')
-            ],
-            [
-                'name' => 'help',
-                'description' => 'Get help on the available tools',
-                'inputSchema' => json_decode('{
-                    "type": "object",
-                    "properties": {}
-                }')
-            ]
-        ];
-        
-        $this->sendResponse($request['id'], ['tools' => $tools]);
-    }
-    
-    /**
-     * Handle tools/call request
-     */
-    private function handleToolsCall($request) {
-        $params = $request['params'] ?? [];
-        $toolName = $params['name'] ?? '';
-        $toolParams = $params['params'] ?? [];
-        
-        error_log("Handling tools/call for tool: {$toolName}");
-        
-        if (!isset($this->tools[$toolName])) {
-            $this->sendErrorResponse($request['id'], -32602, "Tool not found: {$toolName}");
-            return;
-        }
-        
-        $tool = $this->tools[$toolName];
-        
-        try {
-            $result = ($tool['handler'])($toolParams);
-            $this->sendResponse($request['id'], $result);
-        } catch (Exception $e) {
-            $this->sendErrorResponse(
-                $request['id'],
-                -32000,
-                "Error executing tool: " . $e->getMessage()
-            );
-        }
-    }
-    
-    /**
-     * Handle analyzers/analyze request
-     * This is used by Cursor to analyze code
-     */
-    private function handleAnalyze($request) {
-        error_log("Handling analyzers/analyze request");
-        
-        $params = $request['params'] ?? [];
-        $language = $params['language'] ?? '';
-        $content = $params['content'] ?? '';
-        $path = $params['path'] ?? '';
-        
-        error_log("Analyzing {$language} content for path: {$path}");
-        
-        if (empty($content)) {
-            $this->sendErrorResponse($request['id'], -32602, "No content provided for analysis");
-            return;
-        }
-        
-        if ($language !== 'php') {
-            $this->sendResponse($request['id'], [
-                'diagnostics' => [],
-                'metadata' => [
-                    'message' => "Language {$language} is not supported. Only PHP is supported."
-                ]
-            ]);
-            return;
-        }
-        
-        try {
-            // Create a temporary file with the code
-            $tempFile = tempnam(sys_get_temp_dir(), 'phpstan_analysis_');
-            file_put_contents($tempFile . '.php', $content);
-            
-            // Build the phpstan command
-            $level = 5; // Default level
-            $progressFlag = '--no-progress';
-            
-            // Execute phpstan with no colors
-            $command = "phpx phpstan analyse {$tempFile}.php --level={$level} {$progressFlag} --error-format=json --no-ansi 2>&1";
-            $output = shell_exec($command);
-            
-            // Clean up temporary file
-            @unlink($tempFile);
-            if (file_exists($tempFile . '.php')) {
-                @unlink($tempFile . '.php');
-            }
-            
-            // Remove any ANSI codes that might break JSON parsing
-            $cleanOutput = preg_replace('/\x1b\[[0-9;]*m/', '', $output);
-            
-            // Extract the JSON part from the output
-            $analysisResults = null;
-            if (preg_match('/(\{.*\})/s', $cleanOutput, $matches)) {
-                $jsonStr = $matches[1];
-                $analysisResults = json_decode($jsonStr, true);
-            }
-            
-            // Convert PHPStan diagnostics to LSP format
-            $diagnostics = [];
-            
-            if ($analysisResults && isset($analysisResults['files'])) {
-                $startLine = 1;
-                $startChar = 0;
-                
-                foreach ($analysisResults['files'] as $file => $fileErrors) {
-                    foreach ($fileErrors['messages'] as $error) {
-                        $diagnostics[] = [
-                            'range' => [
-                                'start' => ['line' => (int)$error['line'] - 1, 'character' => $startChar],
-                                'end' => ['line' => (int)$error['line'] - 1, 'character' => 1000]
-                            ],
-                            'severity' => 1, // Error severity in LSP
-                            'message' => $error['message'],
-                            'source' => 'PHPStan'
-                        ];
-                    }
-                }
-            }
-            
-            // Also run code quality checks
-            $lines = explode("\n", $content);
-            
-            // Check line length
-            foreach ($lines as $i => $line) {
-                if (strlen($line) > 120) {
-                    $diagnostics[] = [
-                        'range' => [
-                            'start' => ['line' => $i, 'character' => 0],
-                            'end' => ['line' => $i, 'character' => strlen($line)]
-                        ],
-                        'severity' => 2, // Warning severity in LSP
-                        'message' => 'Line exceeds 120 characters (' . strlen($line) . ')',
-                        'source' => 'CodeQuality'
-                    ];
-                }
-            }
-            
-            // Return diagnostics in LSP format
-            $this->sendResponse($request['id'], [
-                'diagnostics' => $diagnostics,
-                'metadata' => [
-                    'message' => count($diagnostics) > 0 
-                        ? "Found " . count($diagnostics) . " issues" 
-                        : "No issues found"
-                ]
-            ]);
-            
-        } catch (Exception $e) {
-            error_log("Error analyzing: " . $e->getMessage());
-            $this->sendErrorResponse(
-                $request['id'],
-                -32000,
-                "Error analyzing code: " . $e->getMessage()
-            );
-        }
-    }
-    
-    /**
-     * Send a JSON-RPC response
-     */
-    private function sendResponse($id, $result, $error = null) {
-        $response = [
-            'jsonrpc' => '2.0',
-            'id' => $id
-        ];
-        
-        if ($error !== null) {
-            $response['error'] = $error;
-        } else {
-            $response['result'] = $result;
-        }
-        
-        $this->sendMessage($response);
-    }
-    
-    /**
-     * Send a JSON-RPC error response
-     */
-    private function sendErrorResponse($id, $code, $message, $data = null) {
-        $error = [
-            'code' => $code,
-            'message' => $message
-        ];
-        
-        if ($data !== null) {
-            $error['data'] = $data;
-        }
-        
-        $this->sendResponse($id, null, $error);
-    }
-    
-    /**
-     * Send a JSON-RPC message
-     */
-    private function sendMessage($message) {
-        // Format message with proper JSON-RPC envelope
-        $json = json_encode($message);
-        
-        // Log what we're sending for debugging
-        error_log("Sending response: " . (isset($message['method']) ? $message['method'] : 'response'));
-        
-        try {
-            // Send as a single line followed by a newline
-            $result = fwrite(STDOUT, $json . "\n");
-            if ($result === false) {
-                error_log("Error writing to STDOUT");
-            }
-            
-            // Make sure the output is flushed immediately
-            $flushResult = fflush(STDOUT);
-            if (!$flushResult) {
-                error_log("Error flushing STDOUT");
-            }
-        } catch (Exception $e) {
-            error_log("Exception when sending message: " . $e->getMessage());
-        }
-    }
-    
-    /**
-     * Run the server
-     */
-    public function run() {
-        error_log("PHPStan MCP Server running...");
-        
-        // Register signal handlers to gracefully handle termination
-        if (function_exists('pcntl_signal')) {
-            pcntl_signal(SIGTERM, function() {
-                error_log("Received SIGTERM, shutting down gracefully");
-                exit(0);
-            });
-            pcntl_signal(SIGINT, function() {
-                error_log("Received SIGINT, shutting down gracefully");
-                exit(0);
-            });
-        }
-        
-        // Keep the server running indefinitely
-        while (true) {
-            // Process input and ignore return value - we never want to exit
-            $this->processInput();
-            
-            // Signal handling if available
-            if (function_exists('pcntl_signal_dispatch')) {
-                pcntl_signal_dispatch();
-            }
-        }
-    }
-}
-
-// Create a simple MCP server
-$server = new SimpleMcpServer('PHPStan-MCP-Server', '1.0.0');
-
-// Register PHPStan analysis tool
-$server->registerTool(
-    'phpstan-analyze',
+// Register a static resource for server information
+$server->registerResource(
+    'server-info',
+    'phpstan://info',
     [
-        'properties' => [
-            'code' => ['type' => 'string', 'description' => 'PHP code to analyze'],
-            'level' => ['type' => 'integer', 'description' => 'Analysis level (0-9)', 'default' => 5],
-            'showProgressBar' => ['type' => 'boolean', 'description' => 'Show progress bar', 'default' => false],
-        ],
-        'required' => ['code']
+        [
+            'type' => 'text',
+            'text' => "# PHPStan MCP Server\n\nThis server provides PHP static analysis tools via MCP, powered by PHPStan.\nIt offers code analysis, quality checks, and security scanning for PHP code.\n\n## Available Tools:\n- phpstan-analyze: Analyze PHP code with PHPStan\n- code-quality-check: Check code quality issues"
+        ]
     ],
-    function(array $params) {
-        // Create a temporary file with the code
-        $tempFile = tempnam(sys_get_temp_dir(), 'phpstan_analysis_');
-        file_put_contents($tempFile . '.php', $params['code']);
+    ['description' => 'Information about the PHPStan MCP Server']
+);
+
+// Register a dynamic resource for analysis results
+use ModelContextProtocol\Protocol\Resources\ResourceTemplate;
+
+$analysisTemplate = new ResourceTemplate('phpstan://analysis/{sessionId}', [
+    'description' => 'Analysis results for a specific session',
+    'examples' => ['session-123', 'session-456']
+]);
+
+$server->registerResourceTemplate(
+    'analysis-results',
+    $analysisTemplate,
+    function(string $uri, array $params) {
+        $sessionId = $params['sessionId'] ?? 'unknown';
         
-        // Build the phpx command
-        $level = isset($params['level']) ? (int)$params['level'] : 5;
-        $level = max(0, min(9, $level)); // Ensure level is between 0-9
-        
-        $progressFlag = isset($params['showProgressBar']) && $params['showProgressBar'] ? '' : '--no-progress';
-        
-        // Execute phpstan via phpx with no colors
-        $command = "phpx phpstan analyse {$tempFile}.php --level={$level} {$progressFlag} --error-format=json --no-ansi 2>&1";
-        $output = shell_exec($command);
-        
-        // Clean up temporary file
-        @unlink($tempFile);
-        if (file_exists($tempFile . '.php')) {
-            @unlink($tempFile . '.php');
-        }
-        
-        // Remove any ANSI codes that might break JSON parsing
-        $cleanOutput = preg_replace('/\x1b\[[0-9;]*m/', '', $output);
-        
-        // Extract the JSON part from the output
-        $analysisResults = null;
-        if (preg_match('/(\{.*\})/s', $cleanOutput, $matches)) {
-            $jsonStr = $matches[1];
-            $analysisResults = json_decode($jsonStr, true);
-        }
-        
-        // If we couldn't extract or parse the JSON, return the raw output
-        if ($analysisResults === null || !is_array($analysisResults)) {
-            return [
-                'content' => [
-                    [
-                        'type' => 'text',
-                        'text' => "# PHPStan Analysis Results\n\n" .
-                                "⚠️ Could not parse PHPStan output.\n\n" .
-                                "## Raw Output\n\n```\n{$cleanOutput}\n```\n\n" .
-                                "This might indicate an issue with the code format or PHPStan configuration."
-                    ]
-                ]
-            ];
-        }
-        
-        $formattedResponse = "# PHPStan Analysis Results\n\n";
-        
-        if (isset($analysisResults['totals']['errors']) && $analysisResults['totals']['errors'] === 0) {
-            $formattedResponse .= "✅ No errors found at level {$level}.\n";
-        } else {
-            $errors = $analysisResults['files'] ?? [];
-            $formattedResponse .= "❌ Found " . ($analysisResults['totals']['errors'] ?? 'unknown number of') . " errors at level {$level}.\n\n";
-            
-            foreach ($errors as $file => $fileErrors) {
-                $formattedResponse .= "## File: " . basename($file) . "\n\n";
-                foreach ($fileErrors['messages'] as $error) {
-                    $formattedResponse .= "- **Line {$error['line']}:** {$error['message']}\n";
-                }
-                $formattedResponse .= "\n";
-            }
-        }
-        
+        // In a real implementation, you would retrieve stored analysis results
+        // For demo purposes, we'll return a sample result
         return [
             'content' => [
                 [
-                    'type' => 'text',
-                    'text' => $formattedResponse
+                    'type' => 'application/json',
+                    'data' => [
+                        'sessionId' => $sessionId,
+                        'timestamp' => date('Y-m-d H:i:s'),
+                        'status' => 'completed',
+                        'results' => [
+                            'errors' => 0,
+                            'warnings' => 2,
+                            'files_analyzed' => 5
+                        ]
+                    ]
                 ]
             ]
         ];
     }
 );
 
-// Register code quality check tool
+// PHPStan analysis tool
+$server->registerTool(
+    'phpstan-analyze',
+    [
+        'properties' => [
+            'code' => [
+                'type' => 'string', 
+                'description' => 'PHP code to analyze with PHPStan'
+            ],
+            'projectPath' => [
+                'type' => 'string', 
+                'description' => 'Path to the project to analyze (optional)'
+            ],
+            'paths' => [
+                'type' => 'array',
+                'items' => ['type' => 'string'],
+                'description' => 'Specific paths to analyze (optional)'
+            ],
+            'level' => [
+                'type' => 'integer',
+                'description' => 'PHPStan analysis level (0-9)',
+                'minimum' => 0,
+                'maximum' => 9
+            ],
+            'showProgressBar' => [
+                'type' => 'boolean',
+                'description' => 'Whether to show progress bar'
+            ]
+        ],
+        'required' => []
+    ],
+    function(array $params) {
+        // Default values
+        $level = $params['level'] ?? 5;
+        $showProgressBar = $params['showProgressBar'] ?? false;
+        $progressFlag = $showProgressBar ? '' : '--no-progress';
+        
+        try {
+            if (isset($params['code'])) {
+                // Analyze provided code snippet
+                $tempFile = tempnam(sys_get_temp_dir(), 'phpstan_analysis_');
+                file_put_contents($tempFile . '.php', $params['code']);
+                
+                $command = "phpx phpstan analyse {$tempFile}.php --level={$level} {$progressFlag} --error-format=json --no-ansi 2>&1";
+                $output = shell_exec($command);
+                
+                // Clean up temporary file
+                @unlink($tempFile);
+                @unlink($tempFile . '.php');
+                
+            } elseif (isset($params['projectPath']) || isset($params['paths'])) {
+                // Analyze project or specific paths
+                $targetPath = $params['projectPath'] ?? getcwd();
+                $paths = $params['paths'] ?? [$targetPath];
+                $pathsStr = implode(' ', array_map('escapeshellarg', $paths));
+                
+                $command = "phpx phpstan analyse {$pathsStr} --level={$level} {$progressFlag} --error-format=json --no-ansi 2>&1";
+                $output = shell_exec($command);
+            } else {
+                return [
+                    'content' => [
+                        [
+                            'type' => 'text',
+                            'text' => "❌ Please provide either 'code' to analyze a snippet or 'projectPath'/'paths' to analyze files."
+                        ]
+                    ]
+                ];
+            }
+            
+            // Clean ANSI codes and extract JSON
+            $cleanOutput = preg_replace('/\x1b\[[0-9;]*m/', '', $output);
+            $analysisResults = null;
+            if (preg_match('/(\{.*\})/s', $cleanOutput, $matches)) {
+                $analysisResults = json_decode($matches[1], true);
+            }
+            
+            // Format results
+            $formattedResponse = "# PHPStan Analysis Results\n\n";
+            
+            if ($analysisResults && isset($analysisResults['totals']['file_errors'])) {
+                $totalErrors = $analysisResults['totals']['file_errors'];
+                
+                if ($totalErrors === 0) {
+                    $formattedResponse .= "✅ No errors found! Your code looks good.\n";
+                } else {
+                    $formattedResponse .= "❌ Found {$totalErrors} issues:\n\n";
+                    
+                    foreach ($analysisResults['files'] as $file => $fileData) {
+                        $relativePath = basename($file);
+                        $formattedResponse .= "## {$relativePath}\n\n";
+                        
+                        foreach ($fileData['messages'] as $error) {
+                            $formattedResponse .= "- **Line {$error['line']}:** {$error['message']}\n";
+                        }
+                        $formattedResponse .= "\n";
+                    }
+                }
+            } else {
+                $formattedResponse .= "⚠️ PHPStan analysis completed but no structured output was generated.\n\n";
+                $formattedResponse .= "Raw output:\n```\n{$cleanOutput}\n```\n";
+            }
+            
+            return [
+                'content' => [
+                    [
+                        'type' => 'text',
+                        'text' => $formattedResponse
+                    ]
+                ]
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'content' => [
+                    [
+                        'type' => 'text',
+                        'text' => "❌ Error during analysis: " . $e->getMessage()
+                    ]
+                ]
+            ];
+        }
+    }
+);
+
+// Code quality check tool
 $server->registerTool(
     'code-quality-check',
     [
         'properties' => [
-            'code' => ['type' => 'string', 'description' => 'PHP code to check'],
+            'code' => [
+                'type' => 'string',
+                'description' => 'PHP code to check for quality issues'
+            ]
         ],
         'required' => ['code']
     ],
     function(array $params) {
-        // Create a temporary file with the code
-        $tempFile = tempnam(sys_get_temp_dir(), 'code_quality_');
-        file_put_contents($tempFile . '.php', $params['code']);
-        
-        // Build a simple quality check (line length, function complexity)
+        $code = $params['code'];
         $issues = [];
-        $lines = explode("\n", $params['code']);
+        $lines = explode("\n", $code);
         
         // Check line length
         foreach ($lines as $i => $line) {
@@ -593,14 +223,13 @@ $server->registerTool(
         }
         
         // Count function parameters
-        preg_match_all('/function\s+\w+\s*\((.*?)\)/s', $params['code'], $matches, PREG_SET_ORDER);
+        preg_match_all('/function\s+\w+\s*\((.*?)\)/s', $code, $matches, PREG_SET_ORDER);
         foreach ($matches as $match) {
-            $functionParams = $match[1];
+            $functionParams = trim($match[1]);
             $paramCount = $functionParams ? count(explode(',', $functionParams)) : 0;
             if ($paramCount > 5) {
-                // Find the line number
-                $pos = strpos($params['code'], $match[0]);
-                $lineNumber = count(explode("\n", substr($params['code'], 0, $pos)));
+                $pos = strpos($code, $match[0]);
+                $lineNumber = count(explode("\n", substr($code, 0, $pos)));
                 
                 $issues[] = [
                     'line' => $lineNumber,
@@ -610,13 +239,7 @@ $server->registerTool(
             }
         }
         
-        // Clean up temporary file
-        @unlink($tempFile);
-        if (file_exists($tempFile . '.php')) {
-            @unlink($tempFile . '.php');
-        }
-        
-        // Format the response
+        // Format response
         $formattedResponse = "# Code Quality Analysis\n\n";
         
         if (empty($issues)) {
@@ -640,21 +263,22 @@ $server->registerTool(
     }
 );
 
-// Register security scan tool
+// Security scan tool
 $server->registerTool(
     'security-scan',
     [
         'properties' => [
-            'code' => ['type' => 'string', 'description' => 'PHP code to scan for security issues'],
+            'code' => [
+                'type' => 'string',
+                'description' => 'PHP code to scan for security vulnerabilities'
+            ]
         ],
         'required' => ['code']
     ],
     function(array $params) {
-        // Create a temporary file with the code
-        $tempFile = tempnam(sys_get_temp_dir(), 'security_scan_');
-        file_put_contents($tempFile . '.php', $params['code']);
+        $code = $params['code'];
         
-        // Basic security patterns to check
+        // Security patterns to check
         $securityPatterns = [
             'SQL Injection' => [
                 'pattern' => '/\$(?:sql|query).*?\$_(?:GET|POST|REQUEST|COOKIE)/i',
@@ -681,31 +305,23 @@ $server->registerTool(
         // Scan for vulnerabilities
         $vulnerabilities = [];
         foreach ($securityPatterns as $type => $details) {
-            if (preg_match_all($details['pattern'], $params['code'], $matches, PREG_OFFSET_CAPTURE)) {
+            if (preg_match_all($details['pattern'], $code, $matches, PREG_OFFSET_CAPTURE)) {
                 foreach ($matches[0] as $match) {
-                    $code = $match[0];
+                    $matchedCode = $match[0];
                     $pos = $match[1];
-                    
-                    // Find the line number
-                    $lineNumber = count(explode("\n", substr($params['code'], 0, $pos)));
+                    $lineNumber = count(explode("\n", substr($code, 0, $pos)));
                     
                     $vulnerabilities[] = [
                         'line' => $lineNumber,
                         'type' => $type,
-                        'code' => $code,
+                        'code' => $matchedCode,
                         'recommendation' => $details['recommendation']
                     ];
                 }
             }
         }
         
-        // Clean up temporary file
-        @unlink($tempFile);
-        if (file_exists($tempFile . '.php')) {
-            @unlink($tempFile . '.php');
-        }
-        
-        // Format the response
+        // Format response
         $formattedResponse = "# Security Scan Results\n\n";
         
         if (empty($vulnerabilities)) {
@@ -731,7 +347,142 @@ $server->registerTool(
     }
 );
 
-// Register help tool
+// Register prompts for common PHP analysis scenarios
+$server->registerPrompt(
+    'php-code-review',
+    [
+        'properties' => [
+            'code' => [
+                'type' => 'string',
+                'description' => 'PHP code to review'
+            ],
+            'focus' => [
+                'type' => 'array',
+                'items' => ['type' => 'string'],
+                'description' => 'Areas to focus on (security, performance, maintainability, etc.)',
+                'default' => ['security', 'performance', 'maintainability']
+            ]
+        ],
+        'required' => ['code'],
+        'description' => 'Generate a comprehensive PHP code review prompt'
+    ],
+    function(array $params) {
+        $code = $params['code'];
+        $focus = $params['focus'] ?? ['security', 'performance', 'maintainability'];
+        $focusAreas = implode(', ', $focus);
+        
+        return [
+            'messages' => [
+                [
+                    'role' => 'system',
+                    'content' => [
+                        'type' => 'text',
+                        'text' => "You are an expert PHP developer and code reviewer. Focus your review on: {$focusAreas}."
+                    ]
+                ],
+                [
+                    'role' => 'user',
+                    'content' => [
+                        'type' => 'text',
+                        'text' => "Please review this PHP code and provide detailed feedback:\n\n```php\n{$code}\n```\n\nFocus on: {$focusAreas}\n\nProvide specific recommendations for improvement."
+                    ]
+                ]
+            ],
+            'description' => "PHP code review focusing on {$focusAreas}"
+        ];
+    }
+);
+
+$server->registerPrompt(
+    'php-refactoring-suggestions',
+    [
+        'properties' => [
+            'code' => [
+                'type' => 'string',
+                'description' => 'PHP code to refactor'
+            ],
+            'goals' => [
+                'type' => 'array',
+                'items' => ['type' => 'string'],
+                'description' => 'Refactoring goals',
+                'default' => ['readability', 'maintainability', 'performance']
+            ]
+        ],
+        'required' => ['code'],
+        'description' => 'Generate refactoring suggestions for PHP code'
+    ],
+    function(array $params) {
+        $code = $params['code'];
+        $goals = $params['goals'] ?? ['readability', 'maintainability', 'performance'];
+        $goalsList = implode(', ', $goals);
+        
+        return [
+            'messages' => [
+                [
+                    'role' => 'system',
+                    'content' => [
+                        'type' => 'text',
+                        'text' => "You are an expert PHP developer specializing in code refactoring. Your goal is to improve: {$goalsList}."
+                    ]
+                ],
+                [
+                    'role' => 'user',
+                    'content' => [
+                        'type' => 'text',
+                        'text' => "Please analyze this PHP code and suggest refactoring improvements:\n\n```php\n{$code}\n```\n\nGoals: {$goalsList}\n\nProvide specific refactoring suggestions with code examples."
+                    ]
+                ]
+            ],
+            'description' => "PHP refactoring suggestions for {$goalsList}"
+        ];
+    }
+);
+
+$server->registerPrompt(
+    'php-documentation',
+    [
+        'properties' => [
+            'code' => [
+                'type' => 'string',
+                'description' => 'PHP code to document'
+            ],
+            'style' => [
+                'type' => 'string',
+                'description' => 'Documentation style',
+                'enum' => ['phpdoc', 'inline', 'readme'],
+                'default' => 'phpdoc'
+            ]
+        ],
+        'required' => ['code'],
+        'description' => 'Generate documentation for PHP code'
+    ],
+    function(array $params) {
+        $code = $params['code'];
+        $style = $params['style'] ?? 'phpdoc';
+        
+        return [
+            'messages' => [
+                [
+                    'role' => 'system',
+                    'content' => [
+                        'type' => 'text',
+                        'text' => "You are an expert PHP developer and technical writer. Generate {$style}-style documentation."
+                    ]
+                ],
+                [
+                    'role' => 'user',
+                    'content' => [
+                        'type' => 'text',
+                        'text' => "Please generate comprehensive {$style} documentation for this PHP code:\n\n```php\n{$code}\n```\n\nInclude parameter descriptions, return values, usage examples, and any important notes."
+                    ]
+                ]
+            ],
+            'description' => "PHP documentation in {$style} style"
+        ];
+    }
+);
+
+// Help tool
 $server->registerTool(
     'help',
     [
@@ -748,12 +499,37 @@ $server->registerTool(
                              "## Available Tools:\n\n" .
                              "- `phpstan-analyze`: Run PHPStan analysis on PHP code\n" .
                              "- `code-quality-check`: Check PHP code for quality issues\n" .
-                             "- `security-scan`: Scan PHP code for security vulnerabilities\n"
+                             "- `security-scan`: Scan PHP code for security vulnerabilities\n" .
+                             "- `help`: Show this help message\n\n" .
+                             "## Available Prompts:\n\n" .
+                             "- `php-code-review`: Generate comprehensive PHP code review prompts\n" .
+                             "- `php-refactoring-suggestions`: Generate refactoring suggestions for PHP code\n" .
+                             "- `php-documentation`: Generate documentation for PHP code\n\n" .
+                             "## Usage Examples:\n\n" .
+                             "### Analyze code snippet:\n" .
+                             "```json\n" .
+                             '{"name": "phpstan-analyze", "params": {"code": "<?php echo $undefined;"}}' . "\n" .
+                             "```\n\n" .
+                             "### Analyze project:\n" .
+                             "```json\n" .
+                             '{"name": "phpstan-analyze", "params": {"projectPath": "/path/to/project", "level": 5}}' . "\n" .
+                             "```\n"
                 ]
             ]
         ];
     }
 );
 
-// Run the server
-$server->run();
+// Show diagnostic information at startup
+$projectPath = $argv[1] ?? getcwd();
+error_log("PHPStan MCP Server initialized with project path: " . $projectPath);
+
+// Connect to stdio transport and start the server
+$transport = new StdioTransport();
+$server->connect($transport);
+
+// Process input continuously
+while (true) {
+    $transport->processInput();
+    usleep(10000); // Sleep for 10ms to prevent busy waiting
+}

@@ -2,6 +2,8 @@
 
 namespace ModelContextProtocol\Server\Tools\Schema;
 
+use ModelContextProtocol\Server\Schema\SchemaInterface;
+
 /**
  * Validates parameters against a schema
  */
@@ -11,10 +13,10 @@ class Validator
      * Validate parameters against a schema
      * 
      * @param array $params The parameters to validate
-     * @param ToolSchema $schema The schema to validate against
+     * @param SchemaInterface $schema The schema to validate against
      * @throws ValidationException If validation fails
      */
-    public function validate(array $params, ToolSchema $schema): void
+    public function validate(array $params, SchemaInterface $schema): void
     {
         $errors = [];
         
