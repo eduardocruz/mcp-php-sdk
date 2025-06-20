@@ -1,0 +1,15 @@
+parameters:
+    level: 8
+    paths:
+        - src
+        - tests
+    excludePaths:
+        - vendor
+    ignoreErrors:
+        # Allow dynamic property access for JSON-RPC messages
+        - '#Access to an undefined property object::\$[a-zA-Z_]+#'
+        # Allow mixed types for JSON-RPC parameters
+        - '#Method .* has parameter .* with no value type specified in iterable type array#'
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false
+    reportUnmatchedIgnoredErrors: false 

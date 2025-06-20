@@ -14,3 +14,16 @@ tasks/
 # Composer
 /vendor/
 composer.lock
+
+# Testing and CI/CD
+.phpunit.cache/
+coverage-report/
+coverage.xml
+coverage.txt
+test-results.xml
+build/
+*.cache
+
+# Code quality tools
+.phpstan.cache
+.phpcs.cache
