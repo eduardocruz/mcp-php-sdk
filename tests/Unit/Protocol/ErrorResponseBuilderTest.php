@@ -29,7 +29,7 @@ class ErrorResponseBuilderTest extends TestCase
         $this->assertEquals('2.0', $response->jsonrpc);
         $this->assertNull($response->result);
         $this->assertNotNull($response->error);
-        
+
         $error = $response->error;
         $this->assertNotNull($error);
         $this->assertEquals(Constants::ERROR_CODE_INVALID_PARAMS, $error->code);
@@ -39,7 +39,7 @@ class ErrorResponseBuilderTest extends TestCase
     public function testCreateErrorResponseWithData(): void
     {
         $data = ['validation_errors' => ['field' => 'required']];
-        
+
         $response = ErrorResponseBuilder::createErrorResponse(
             $this->request,
             Constants::ERROR_CODE_INVALID_PARAMS,
@@ -56,7 +56,7 @@ class ErrorResponseBuilderTest extends TestCase
     public function testCreateErrorResponseWithContext(): void
     {
         $context = ['operation' => 'test_op', 'user_id' => 'user123'];
-        
+
         $response = ErrorResponseBuilder::createErrorResponse(
             $this->request,
             Constants::ERROR_CODE_INTERNAL_ERROR,
@@ -77,11 +77,11 @@ class ErrorResponseBuilderTest extends TestCase
     public function testFromException(): void
     {
         $exception = new \InvalidArgumentException('Test exception message');
-        
+
         $response = ErrorResponseBuilder::fromException($this->request, $exception);
 
         $this->assertEquals('test-123', $response->id);
-        
+
         $error = $response->error;
         $this->assertNotNull($error);
         $this->assertEquals(Constants::ERROR_CODE_INVALID_PARAMS, $error->code);
@@ -93,10 +93,10 @@ class ErrorResponseBuilderTest extends TestCase
     public function testFromExceptionWithCustomCode(): void
     {
         $exception = new \RuntimeException('Runtime error');
-        
+
         $response = ErrorResponseBuilder::fromException(
-            $this->request, 
-            $exception, 
+            $this->request,
+            $exception,
             ErrorResponseBuilder::ERROR_CODE_TOOL_EXECUTION_ERROR
         );
 
@@ -143,7 +143,7 @@ class ErrorResponseBuilderTest extends TestCase
     public function testValidationError(): void
     {
         $errors = ['name' => 'required', 'age' => 'must be integer'];
-        
+
         $response = ErrorResponseBuilder::validationError($this->request, $errors);
 
         $error = $response->error;
@@ -163,7 +163,7 @@ class ErrorResponseBuilderTest extends TestCase
     public function testGetErrorCodes(): void
     {
         $errorCodes = ErrorResponseBuilder::getErrorCodes();
-        
+
         $this->assertIsArray($errorCodes);
         $this->assertNotEmpty($errorCodes);
         $this->assertArrayHasKey(Constants::ERROR_CODE_PARSE_ERROR, $errorCodes);
@@ -181,11 +181,14 @@ class ErrorResponseBuilderTest extends TestCase
         foreach ($testCases as [$exceptionClass, $expectedCode]) {
             $exception = new $exceptionClass('Test message');
             $response = ErrorResponseBuilder::fromException($this->request, $exception);
-            
+
             $error = $response->error;
             $this->assertNotNull($error);
-            $this->assertEquals($expectedCode, $error->code, 
-                "Exception {$exceptionClass} should map to error code {$expectedCode}");
+            $this->assertEquals(
+                $expectedCode,
+                $error->code,
+                "Exception {$exceptionClass} should map to error code {$expectedCode}"
+            );
         }
     }
-} 
+}

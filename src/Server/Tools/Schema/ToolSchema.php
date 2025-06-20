@@ -16,7 +16,7 @@ class ToolSchema implements SchemaInterface
 
     /**
      * Create a new tool schema
-     * 
+     *
      * @param string $name The name of the tool
      * @param array $properties The properties of the tool schema
      * @param array $required The required properties

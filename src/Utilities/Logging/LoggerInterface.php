@@ -4,7 +4,7 @@ namespace ModelContextProtocol\Utilities\Logging;
 
 /**
  * Simple PSR-compatible logger interface for the MCP protocol.
- * 
+ *
  * This is a simplified version of the PSR-3 LoggerInterface.
  */
 interface LoggerInterface
@@ -17,7 +17,7 @@ interface LoggerInterface
      * @return void
      */
     public function emergency(string $message, array $context = []): void;
-    
+
     /**
      * Log an alert message.
      *
@@ -26,7 +26,7 @@ interface LoggerInterface
      * @return void
      */
     public function alert(string $message, array $context = []): void;
-    
+
     /**
      * Log a critical message.
      *
@@ -35,7 +35,7 @@ interface LoggerInterface
      * @return void
      */
     public function critical(string $message, array $context = []): void;
-    
+
     /**
      * Log an error message.
      *
@@ -44,7 +44,7 @@ interface LoggerInterface
      * @return void
      */
     public function error(string $message, array $context = []): void;
-    
+
     /**
      * Log a warning message.
      *
@@ -53,7 +53,7 @@ interface LoggerInterface
      * @return void
      */
     public function warning(string $message, array $context = []): void;
-    
+
     /**
      * Log a notice message.
      *
@@ -62,7 +62,7 @@ interface LoggerInterface
      * @return void
      */
     public function notice(string $message, array $context = []): void;
-    
+
     /**
      * Log an info message.
      *
@@ -71,7 +71,7 @@ interface LoggerInterface
      * @return void
      */
     public function info(string $message, array $context = []): void;
-    
+
     /**
      * Log a debug message.
      *
@@ -80,7 +80,7 @@ interface LoggerInterface
      * @return void
      */
     public function debug(string $message, array $context = []): void;
-    
+
     /**
      * Log a message with an arbitrary level.
      *

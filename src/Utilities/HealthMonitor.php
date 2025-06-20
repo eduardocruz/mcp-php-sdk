@@ -10,7 +10,7 @@ use ModelContextProtocol\Utilities\Logging\ConsoleLogger;
 
 /**
  * Health monitoring utility for MCP connections.
- * 
+ *
  * Provides connection health monitoring, automatic ping/pong functionality,
  * and timeout handling for unresponsive connections.
  */
@@ -20,77 +20,77 @@ class HealthMonitor
      * @var TransportInterface|null The transport to monitor
      */
     private ?TransportInterface $transport = null;
-    
+
     /**
      * @var LoggerInterface The logger instance
      */
     private LoggerInterface $logger;
-    
+
     /**
      * @var bool Whether monitoring is active
      */
     private bool $monitoring = false;
-    
+
     /**
      * @var int Ping interval in seconds
      */
     private int $pingInterval = 30;
-    
+
     /**
      * @var int Timeout for ping responses in seconds
      */
     private int $pingTimeout = 10;
-    
+
     /**
      * @var float|null Timestamp of last ping sent
      */
     private ?float $lastPingSent = null;
-    
+
     /**
      * @var float|null Timestamp of last pong received
      */
     private ?float $lastPongReceived = null;
-    
+
     /**
      * @var string|null ID of the last ping request
      */
     private ?string $lastPingId = null;
-    
+
     /**
      * @var array<string, float> Ping response times (requestId => responseTime)
      */
     private array $pingResponseTimes = [];
-    
+
     /**
      * @var int Maximum number of consecutive failed pings before considering connection dead
      */
     private int $maxFailedPings = 3;
-    
+
     /**
      * @var int Current count of consecutive failed pings
      */
     private int $failedPingCount = 0;
-    
+
     /**
      * @var callable|null Callback for when connection is considered healthy
      */
     private $onHealthy = null;
-    
+
     /**
      * @var callable|null Callback for when connection is considered unhealthy
      */
     private $onUnhealthy = null;
-    
+
     /**
      * @var callable|null Callback for when connection times out
      */
     private $onTimeout = null;
-    
+
     /**
      * @var bool Current health status
      */
     private bool $isHealthy = true;
-    
+
     /**
      * Constructor.
      *
@@ -100,7 +100,7 @@ class HealthMonitor
     {
         $this->logger = $logger ?? new ConsoleLogger();
     }
-    
+
     /**
      * Set the transport to monitor.
      *
@@ -110,12 +110,12 @@ class HealthMonitor
     public function setTransport(?TransportInterface $transport): void
     {
         $this->transport = $transport;
-        
+
         if ($transport === null) {
             $this->stopMonitoring();
         }
     }
-    
+
     /**
      * Start connection health monitoring.
      *
@@ -126,26 +126,26 @@ class HealthMonitor
         if ($this->monitoring) {
             return;
         }
-        
+
         if ($this->transport === null) {
             $this->logger->warning('Cannot start health monitoring: no transport set');
             return;
         }
-        
+
         $this->monitoring = true;
         $this->isHealthy = true;
         $this->failedPingCount = 0;
         $this->lastPingSent = null;
         $this->lastPongReceived = null;
         $this->lastPingId = null;
-        
+
         $this->logger->info('Health monitoring started', [
             'pingInterval' => $this->pingInterval,
             'pingTimeout' => $this->pingTimeout,
             'maxFailedPings' => $this->maxFailedPings
         ]);
     }
-    
+
     /**
      * Stop connection health monitoring.
      *
@@ -156,11 +156,11 @@ class HealthMonitor
         if (!$this->monitoring) {
             return;
         }
-        
+
         $this->monitoring = false;
         $this->logger->info('Health monitoring stopped');
     }
-    
+
     /**
      * Check if monitoring is active.
      *
@@ -170,7 +170,7 @@ class HealthMonitor
     {
         return $this->monitoring;
     }
-    
+
     /**
      * Check if the connection is considered healthy.
      *
@@ -180,7 +180,7 @@ class HealthMonitor
     {
         return $this->isHealthy;
     }
-    
+
     /**
      * Set the ping interval.
      *
@@ -191,7 +191,7 @@ class HealthMonitor
     {
         $this->pingInterval = max(1, $seconds);
     }
-    
+
     /**
      * Set the ping timeout.
      *
@@ -202,7 +202,7 @@ class HealthMonitor
     {
         $this->pingTimeout = max(1, $seconds);
     }
-    
+
     /**
      * Set the maximum number of failed pings.
      *
@@ -213,7 +213,7 @@ class HealthMonitor
     {
         $this->maxFailedPings = max(1, $count);
     }
-    
+
     /**
      * Set callback for healthy connection events.
      *
@@ -224,7 +224,7 @@ class HealthMonitor
     {
         $this->onHealthy = $callback;
     }
-    
+
     /**
      * Set callback for unhealthy connection events.
      *
@@ -235,7 +235,7 @@ class HealthMonitor
     {
         $this->onUnhealthy = $callback;
     }
-    
+
     /**
      * Set callback for connection timeout events.
      *
@@ -246,7 +246,7 @@ class HealthMonitor
     {
         $this->onTimeout = $callback;
     }
-    
+
     /**
      * Perform health check cycle.
      * This should be called periodically by the application.
@@ -258,20 +258,20 @@ class HealthMonitor
         if (!$this->monitoring || $this->transport === null) {
             return;
         }
-        
+
         $now = microtime(true);
-        
+
         // Check if we need to send a ping
         if ($this->shouldSendPing($now)) {
             $this->sendPing();
         }
-        
+
         // Check for ping timeout
         if ($this->hasPingTimedOut($now)) {
             $this->handlePingTimeout();
         }
     }
-    
+
     /**
      * Handle a ping response.
      *
@@ -283,24 +283,24 @@ class HealthMonitor
         if ($requestId === $this->lastPingId) {
             $now = microtime(true);
             $responseTime = $now - $this->lastPingSent;
-            
+
             $this->pingResponseTimes[$requestId] = $responseTime;
             $this->lastPongReceived = $now;
             $this->lastPingId = null;
             $this->failedPingCount = 0;
-            
+
             $this->logger->debug('Ping response received', [
                 'requestId' => $requestId,
                 'responseTime' => round($responseTime * 1000, 2) . 'ms'
             ]);
-            
+
             // Update health status to healthy if it wasn't
             if (!$this->isHealthy) {
                 $this->setHealthy(true);
             }
         }
     }
-    
+
     /**
      * Get connection statistics.
      *
@@ -310,7 +310,7 @@ class HealthMonitor
     {
         $recentPings = array_slice($this->pingResponseTimes, -10, 10, true);
         $avgResponseTime = empty($recentPings) ? null : array_sum($recentPings) / count($recentPings);
-        
+
         return [
             'isHealthy' => $this->isHealthy,
             'isMonitoring' => $this->monitoring,
@@ -324,7 +324,7 @@ class HealthMonitor
             'totalPings' => count($this->pingResponseTimes)
         ];
     }
-    
+
     /**
      * Reset health monitoring state.
      *
@@ -339,7 +339,7 @@ class HealthMonitor
         $this->pingResponseTimes = [];
         $this->setHealthy(true);
     }
-    
+
     /**
      * Check if we should send a ping.
      *
@@ -352,16 +352,16 @@ class HealthMonitor
         if ($this->lastPingId !== null) {
             return false;
         }
-        
+
         // Send initial ping if we haven't sent one yet
         if ($this->lastPingSent === null) {
             return true;
         }
-        
+
         // Send ping if interval has elapsed
         return ($now - $this->lastPingSent) >= $this->pingInterval;
     }
-    
+
     /**
      * Check if the current ping has timed out.
      *
@@ -373,10 +373,10 @@ class HealthMonitor
         if ($this->lastPingId === null || $this->lastPingSent === null) {
             return false;
         }
-        
+
         return ($now - $this->lastPingSent) >= $this->pingTimeout;
     }
-    
+
     /**
      * Send a ping request.
      *
@@ -387,15 +387,15 @@ class HealthMonitor
         if ($this->transport === null) {
             return;
         }
-        
+
         $this->lastPingId = 'health-ping-' . uniqid();
         $this->lastPingSent = microtime(true);
-        
+
         $ping = new Request($this->lastPingId, 'ping', []);
-        
+
         try {
             $this->transport->send($ping);
-            
+
             $this->logger->debug('Health ping sent', [
                 'requestId' => $this->lastPingId
             ]);
@@ -404,12 +404,12 @@ class HealthMonitor
                 'error' => $e->getMessage(),
                 'requestId' => $this->lastPingId
             ]);
-            
+
             $this->lastPingId = null;
             $this->handlePingTimeout();
         }
     }
-    
+
     /**
      * Handle ping timeout.
      *
@@ -419,15 +419,15 @@ class HealthMonitor
     {
         $this->failedPingCount++;
         $this->lastPingId = null;
-        
+
         $this->logger->warning('Ping timeout', [
             'failedPingCount' => $this->failedPingCount,
             'maxFailedPings' => $this->maxFailedPings
         ]);
-        
+
         if ($this->failedPingCount >= $this->maxFailedPings) {
             $this->setHealthy(false);
-            
+
             if ($this->onTimeout !== null) {
                 try {
                     ($this->onTimeout)();
@@ -439,7 +439,7 @@ class HealthMonitor
             }
         }
     }
-    
+
     /**
      * Set the health status.
      *
@@ -451,15 +451,15 @@ class HealthMonitor
         if ($this->isHealthy === $healthy) {
             return;
         }
-        
+
         $this->isHealthy = $healthy;
-        
+
         $this->logger->info('Connection health status changed', [
             'isHealthy' => $healthy
         ]);
-        
+
         $callback = $healthy ? $this->onHealthy : $this->onUnhealthy;
-        
+
         if ($callback !== null) {
             try {
                 $callback();
@@ -471,4 +471,4 @@ class HealthMonitor
             }
         }
     }
-} 
+}

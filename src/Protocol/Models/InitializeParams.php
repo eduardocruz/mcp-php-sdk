@@ -18,8 +18,9 @@ class InitializeParams
         public string $protocolVersion,
         public ClientCapabilities $capabilities,
         public Implementation $clientInfo
-    ) {}
-    
+    ) {
+    }
+
     /**
      * Convert the initialization parameters to an array.
      *
@@ -33,7 +34,7 @@ class InitializeParams
             'clientInfo' => $this->clientInfo->toArray(),
         ];
     }
-    
+
     /**
      * Create an InitializeParams instance from an array.
      *

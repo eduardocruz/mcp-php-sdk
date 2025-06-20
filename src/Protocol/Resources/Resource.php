@@ -12,7 +12,7 @@ abstract class Resource
 
     /**
      * Create a new resource
-     * 
+     *
      * @param string $name The resource name
      * @param ResourceTemplate $template The resource template
      */
@@ -56,7 +56,7 @@ abstract class Resource
 
     /**
      * Handle a request for this resource
-     * 
+     *
      * @param string $uri The requested URI
      * @param array $params The parameters extracted from the URI
      * @return array The resource content

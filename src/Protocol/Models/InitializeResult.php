@@ -20,8 +20,9 @@ class InitializeResult
         public ServerCapabilities $capabilities,
         public Implementation $serverInfo,
         public ?string $instructions = null
-    ) {}
-    
+    ) {
+    }
+
     /**
      * Convert the initialization result to an array.
      *
@@ -34,14 +35,14 @@ class InitializeResult
             'capabilities' => $this->capabilities->toArray(),
             'serverInfo' => $this->serverInfo->toArray(),
         ];
-        
+
         if ($this->instructions !== null) {
             $result['instructions'] = $this->instructions;
         }
-        
+
         return $result;
     }
-    
+
     /**
      * Create an InitializeResult instance from an array.
      *

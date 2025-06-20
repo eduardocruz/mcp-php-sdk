@@ -16,7 +16,7 @@ class PromptSchema implements SchemaInterface
 
     /**
      * Create a new prompt schema
-     * 
+     *
      * @param string $name The name of the prompt
      * @param array $properties The properties of the prompt schema
      * @param array $required The required properties

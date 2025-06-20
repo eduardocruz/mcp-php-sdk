@@ -11,17 +11,17 @@ class Constants
      * The latest supported MCP protocol version.
      */
     public const LATEST_PROTOCOL_VERSION = '2024-11-05';
-    
+
     /**
      * All supported MCP protocol versions.
-     * 
+     *
      * @var array<string>
      */
     public const SUPPORTED_PROTOCOL_VERSIONS = [
         self::LATEST_PROTOCOL_VERSION,
         '2024-10-07',
     ];
-    
+
     /**
      * Predefined error codes for the MCP protocol.
      */

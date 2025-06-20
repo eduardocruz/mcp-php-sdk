@@ -10,7 +10,7 @@ use Throwable;
 
 /**
  * Utility class for building standardized JSON-RPC error responses.
- * 
+ *
  * This class provides a consistent way to create error responses across all MCP components,
  * following the JSON-RPC 2.0 specification and MCP-specific error codes.
  */
@@ -29,10 +29,10 @@ class ErrorResponseBuilder
     public const ERROR_CODE_SUBSCRIPTION_ERROR = -32018;
     public const ERROR_CODE_TRANSPORT_ERROR = -32019;
     public const ERROR_CODE_SESSION_ERROR = -32020;
-    
+
     // Alias for Constants::ERROR_CODE_INTERNAL_ERROR for convenience
     public const ERROR_CODE_INTERNAL_ERROR = Constants::ERROR_CODE_INTERNAL_ERROR;
-    
+
     /**
      * Error code to message mapping for consistency
      */
@@ -55,7 +55,7 @@ class ErrorResponseBuilder
         self::ERROR_CODE_TRANSPORT_ERROR => 'Transport error',
         self::ERROR_CODE_SESSION_ERROR => 'Session error',
     ];
-    
+
     /**
      * Create a standardized error response for a request.
      *
@@ -76,7 +76,7 @@ class ErrorResponseBuilder
         $errorData = self::createErrorData($code, $message, $data, $context);
         return new Response($request->id, null, $errorData);
     }
-    
+
     /**
      * Create standardized error data.
      *
@@ -96,28 +96,28 @@ class ErrorResponseBuilder
         if ($message === null) {
             $message = self::ERROR_MESSAGES[$code] ?? 'Unknown error';
         }
-        
+
         // Enhance data with debugging context if provided
         if (!empty($context) || $data !== null) {
             $enhancedData = [];
-            
+
             if ($data !== null) {
                 $enhancedData['details'] = $data;
             }
-            
+
             if (!empty($context)) {
                 $enhancedData['context'] = $context;
-                
+
                 // Add timestamp for debugging
                 $enhancedData['timestamp'] = date('c');
             }
-            
+
             $data = $enhancedData;
         }
-        
+
         return new ErrorData($code, $message, $data);
     }
-    
+
     /**
      * Create an error response from an exception.
      *
@@ -137,7 +137,7 @@ class ErrorResponseBuilder
         if ($code === null) {
             $code = self::getErrorCodeFromException($exception);
         }
-        
+
         // Build context with exception details
         $exceptionContext = [
             'exception' => get_class($exception),
@@ -145,10 +145,10 @@ class ErrorResponseBuilder
             'line' => $exception->getLine(),
             'trace' => $exception->getTraceAsString(),
         ];
-        
+
         // Merge with provided context
         $context = array_merge($context, $exceptionContext);
-        
+
         return self::createErrorResponse(
             $request,
             $code,
@@ -157,7 +157,7 @@ class ErrorResponseBuilder
             $context
         );
     }
-    
+
     /**
      * Create a validation error response.
      *
@@ -172,7 +172,7 @@ class ErrorResponseBuilder
         ?string $message = null
     ): Response {
         $message = $message ?? 'Parameter validation failed';
-        
+
         return self::createErrorResponse(
             $request,
             self::ERROR_CODE_VALIDATION_ERROR,
@@ -180,7 +180,7 @@ class ErrorResponseBuilder
             ['errors' => $errors]
         );
     }
-    
+
     /**
      * Create a tool not found error response.
      *
@@ -197,7 +197,7 @@ class ErrorResponseBuilder
             ['tool' => $toolName]
         );
     }
-    
+
     /**
      * Create a tool execution error response.
      *
@@ -218,7 +218,7 @@ class ErrorResponseBuilder
             ['tool' => $toolName, 'error' => $error]
         );
     }
-    
+
     /**
      * Create a resource not found error response.
      *
@@ -235,7 +235,7 @@ class ErrorResponseBuilder
             ['uri' => $uri]
         );
     }
-    
+
     /**
      * Create a resource error response.
      *
@@ -256,7 +256,7 @@ class ErrorResponseBuilder
             ['uri' => $uri, 'error' => $error]
         );
     }
-    
+
     /**
      * Create a prompt not found error response.
      *
@@ -273,7 +273,7 @@ class ErrorResponseBuilder
             ['prompt' => $promptName]
         );
     }
-    
+
     /**
      * Create a prompt error response.
      *
@@ -294,7 +294,7 @@ class ErrorResponseBuilder
             ['prompt' => $promptName, 'error' => $error]
         );
     }
-    
+
     /**
      * Create an array-format error response (for handlers that return arrays).
      *
@@ -313,7 +313,7 @@ class ErrorResponseBuilder
         $errorData = self::createErrorData($code, $message, $data, $context);
         return ['error' => $errorData->toArray()];
     }
-    
+
     /**
      * Determine error code from exception type.
      *
@@ -332,7 +332,7 @@ class ErrorResponseBuilder
             default => Constants::ERROR_CODE_INTERNAL_ERROR,
         };
     }
-    
+
     /**
      * Get all available error codes with their descriptions.
      *
@@ -342,7 +342,7 @@ class ErrorResponseBuilder
     {
         return self::ERROR_MESSAGES;
     }
-    
+
     /**
      * Check if an error code is valid.
      *
@@ -353,4 +353,4 @@ class ErrorResponseBuilder
     {
         return isset(self::ERROR_MESSAGES[$code]);
     }
-} 
+}

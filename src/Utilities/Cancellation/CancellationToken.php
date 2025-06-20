@@ -11,22 +11,22 @@ class CancellationToken
      * @var bool Whether cancellation has been requested
      */
     private bool $cancelled = false;
-    
+
     /**
      * @var string|null The reason for cancellation
      */
     private ?string $reason = null;
-    
+
     /**
      * @var array<callable> Callbacks to execute when cancellation is requested
      */
     private array $callbacks = [];
-    
+
     /**
      * @var float|null Timestamp when cancellation was requested
      */
     private ?float $cancelledAt = null;
-    
+
     /**
      * Check if cancellation has been requested.
      *
@@ -36,7 +36,7 @@ class CancellationToken
     {
         return $this->cancelled;
     }
-    
+
     /**
      * Get the reason for cancellation.
      *
@@ -46,7 +46,7 @@ class CancellationToken
     {
         return $this->reason;
     }
-    
+
     /**
      * Get the timestamp when cancellation was requested.
      *
@@ -56,7 +56,7 @@ class CancellationToken
     {
         return $this->cancelledAt;
     }
-    
+
     /**
      * Request cancellation of the operation.
      *
@@ -68,11 +68,11 @@ class CancellationToken
         if ($this->cancelled) {
             return; // Already cancelled
         }
-        
+
         $this->cancelled = true;
         $this->reason = $reason;
         $this->cancelledAt = microtime(true);
-        
+
         // Execute all registered callbacks
         foreach ($this->callbacks as $callback) {
             try {
@@ -83,7 +83,7 @@ class CancellationToken
             }
         }
     }
-    
+
     /**
      * Register a callback to be executed when cancellation is requested.
      *
@@ -103,7 +103,7 @@ class CancellationToken
             $this->callbacks[] = $callback;
         }
     }
-    
+
     /**
      * Throw an exception if cancellation has been requested.
      *
@@ -116,7 +116,7 @@ class CancellationToken
             throw new CancellationException($this->reason ?? 'Operation was cancelled', $this);
         }
     }
-    
+
     /**
      * Create a new cancellation token that is already cancelled.
      *
@@ -129,7 +129,7 @@ class CancellationToken
         $token->cancel($reason);
         return $token;
     }
-    
+
     /**
      * Create a new cancellation token that is not cancelled.
      *
@@ -139,7 +139,7 @@ class CancellationToken
     {
         return new self();
     }
-    
+
     /**
      * Create a cancellation token that will be cancelled after a timeout.
      *
@@ -150,11 +150,11 @@ class CancellationToken
     public static function timeout(float $timeoutSeconds, ?string $reason = null): self
     {
         $token = new self();
-        
+
         // Note: In a real implementation, you would use an event loop or timer
         // For now, this is a placeholder that would need to be integrated with
         // your application's timer/event system
-        
+
         return $token;
     }
-} 
+}

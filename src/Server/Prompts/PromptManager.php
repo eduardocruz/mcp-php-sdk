@@ -15,12 +15,12 @@ class PromptManager
     /** @var Prompt[] */
     private array $prompts = [];
     private Validator $validator;
-    
+
     /**
      * @var NotificationManager|null The notification manager for sending notifications
      */
     private ?NotificationManager $notificationManager = null;
-    
+
     /**
      * Create a new prompt manager
      */
@@ -28,7 +28,7 @@ class PromptManager
     {
         $this->validator = new Validator();
     }
-    
+
     /**
      * Set the notification manager for sending automatic notifications.
      *
@@ -39,10 +39,10 @@ class PromptManager
     {
         $this->notificationManager = $notificationManager;
     }
-    
+
     /**
      * Register a new prompt
-     * 
+     *
      * @param string $name The prompt name
      * @param array|PromptSchema $schema The prompt schema
      * @param callable $handler The handler function
@@ -57,18 +57,18 @@ class PromptManager
         if (is_array($schema)) {
             $schema = PromptSchema::fromArray($name, $schema);
         }
-        
+
         $prompt = new Prompt($name, $schema, $handler);
         $this->prompts[$name] = $prompt;
-        
+
         // Send prompts list changed notification if notification manager is available
         if ($this->notificationManager !== null) {
             $this->notificationManager->sendPromptsListChanged();
         }
-        
+
         return $prompt;
     }
-    
+
     /**
      * Get a prompt by name
      */
@@ -76,7 +76,7 @@ class PromptManager
     {
         return $this->prompts[$name] ?? null;
     }
-    
+
     /**
      * Get a prompt's schema
      */
@@ -85,10 +85,10 @@ class PromptManager
         $prompt = $this->getPrompt($name);
         return $prompt ? $prompt->getSchema() : null;
     }
-    
+
     /**
      * Execute a prompt with the given parameters
-     * 
+     *
      * @param string $name The prompt to execute
      * @param array $params The parameters for the prompt
      * @return array The result of the prompt execution
@@ -98,38 +98,38 @@ class PromptManager
     public function execute(string $name, array $params): array
     {
         $prompt = $this->getPrompt($name);
-        
+
         if ($prompt === null) {
             throw new \InvalidArgumentException("Prompt not found: $name");
         }
-        
+
         // Validate parameters against schema
         try {
             $this->validator->validate($params, $prompt->getSchema());
         } catch (ValidationException $e) {
             throw new \InvalidArgumentException("Schema validation failed");
         }
-        
+
         // Execute prompt
         return $prompt->execute($params);
     }
-    
+
     /**
      * List all registered prompts
-     * 
+     *
      * @return array The list of prompt metadata
      */
     public function list(): array
     {
         $result = [];
-        
+
         foreach ($this->prompts as $prompt) {
             $result[] = $prompt->getMetadata();
         }
-        
+
         return $result;
     }
-    
+
     /**
      * Check if a prompt exists
      */
@@ -137,7 +137,7 @@ class PromptManager
     {
         return isset($this->prompts[$name]);
     }
-    
+
     /**
      * Remove a prompt
      */
@@ -145,18 +145,18 @@ class PromptManager
     {
         if (isset($this->prompts[$name])) {
             unset($this->prompts[$name]);
-            
+
             // Send prompts list changed notification if notification manager is available
             if ($this->notificationManager !== null) {
                 $this->notificationManager->sendPromptsListChanged();
             }
-            
+
             return true;
         }
-        
+
         return false;
     }
-    
+
     /**
      * Get all prompt names
      */
@@ -164,14 +164,14 @@ class PromptManager
     {
         return array_keys($this->prompts);
     }
-    
+
     /**
      * Clear all prompts
      */
     public function clear(): void
     {
         $this->prompts = [];
-        
+
         // Send prompts list changed notification if notification manager is available
         if ($this->notificationManager !== null) {
             $this->notificationManager->sendPromptsListChanged();

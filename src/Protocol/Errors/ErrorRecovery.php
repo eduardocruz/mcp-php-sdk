@@ -12,9 +12,9 @@ use Throwable;
 
 /**
  * Error recovery mechanisms for different failure types.
- * 
+ *
  * This class provides strategies for recovering from various error conditions
- * that may occur during MCP operations, including transport failures, 
+ * that may occur during MCP operations, including transport failures,
  * request timeouts, and connection issues.
  */
 class ErrorRecovery
@@ -26,19 +26,19 @@ class ErrorRecovery
     public const STRATEGY_FALLBACK = 'fallback';
     public const STRATEGY_CIRCUIT_BREAKER = 'circuit_breaker';
     public const STRATEGY_GRACEFUL_DEGRADATION = 'graceful_degradation';
-    
+
     /**
      * Circuit breaker states
      */
     public const CIRCUIT_CLOSED = 'closed';
     public const CIRCUIT_OPEN = 'open';
     public const CIRCUIT_HALF_OPEN = 'half_open';
-    
+
     private LoggerInterface $logger;
     private array $retryConfig;
     private array $circuitBreakerState = [];
     private array $fallbackHandlers = [];
-    
+
     /**
      * Constructor.
      *
@@ -56,7 +56,7 @@ class ErrorRecovery
             'jitter' => true,
         ], $config['retry'] ?? []);
     }
-    
+
     /**
      * Execute a request with error recovery.
      *
@@ -79,7 +79,7 @@ class ErrorRecovery
             default => throw new \InvalidArgumentException("Unknown recovery strategy: {$strategy}"),
         };
     }
-    
+
     /**
      * Execute operation with retry strategy.
      *
@@ -95,16 +95,16 @@ class ErrorRecovery
         $maxDelay = $options['max_delay'] ?? $this->retryConfig['max_delay'];
         $backoffMultiplier = $options['backoff_multiplier'] ?? $this->retryConfig['backoff_multiplier'];
         $jitter = $options['jitter'] ?? $this->retryConfig['jitter'];
-        
+
         $attempt = 0;
         $delay = $initialDelay;
         /** @var \Throwable|null $lastException */
         $lastException = null;
-        
+
         while ($attempt <= $maxRetries) {
             try {
                 $result = $operation();
-                
+
                 // Log successful recovery if this wasn't the first attempt
                 if ($attempt > 0) {
                     $this->logger->info('Operation succeeded after retry', [
@@ -112,17 +112,17 @@ class ErrorRecovery
                         'total_attempts' => $attempt + 1,
                     ]);
                 }
-                
+
                 return $result;
             } catch (Throwable $e) {
                 $lastException = $e;
                 $attempt++;
-                
+
                 // Don't retry if we've reached the max attempts
                 if ($attempt > $maxRetries) {
                     break;
                 }
-                
+
                 // Check if this exception should be retried
                 if (!$this->shouldRetry($e)) {
                     $this->logger->warning('Exception not suitable for retry', [
@@ -131,7 +131,7 @@ class ErrorRecovery
                     ]);
                     throw $e;
                 }
-                
+
                 $this->logger->warning('Operation failed, retrying', [
                     'attempt' => $attempt,
                     'max_retries' => $maxRetries,
@@ -139,18 +139,18 @@ class ErrorRecovery
                     'exception' => get_class($e),
                     'message' => $e->getMessage(),
                 ]);
-                
+
                 // Sleep before retry
                 if ($delay > 0) {
                     $actualDelay = $jitter ? $this->addJitter($delay) : $delay;
                     usleep($actualDelay * 1000); // Convert to microseconds
                 }
-                
+
                 // Calculate next delay with exponential backoff
                 $delay = min($delay * $backoffMultiplier, $maxDelay);
             }
         }
-        
+
         // All retries failed
         if ($lastException !== null) {
             $this->logger->error('All retry attempts failed', [
@@ -158,14 +158,14 @@ class ErrorRecovery
                 'last_exception' => get_class($lastException),
                 'message' => $lastException->getMessage(),
             ]);
-            
+
             throw $lastException;
         }
-        
+
         // This should never happen, but we need it for PHPStan
         throw new \RuntimeException('All retry attempts failed with no exception captured');
     }
-    
+
     /**
      * Execute operation with fallback strategy.
      *
@@ -177,11 +177,11 @@ class ErrorRecovery
     private function executeWithFallback(callable $operation, array $options = []): mixed
     {
         $fallbackOperation = $options['fallback'] ?? null;
-        
+
         if (!$fallbackOperation || !is_callable($fallbackOperation)) {
             throw new \InvalidArgumentException('Fallback strategy requires a callable fallback operation');
         }
-        
+
         try {
             return $operation();
         } catch (Throwable $e) {
@@ -189,12 +189,12 @@ class ErrorRecovery
                 'exception' => get_class($e),
                 'message' => $e->getMessage(),
             ]);
-            
+
             try {
                 $result = $fallbackOperation($e);
-                
+
                 $this->logger->info('Fallback operation succeeded');
-                
+
                 return $result;
             } catch (Throwable $fallbackException) {
                 $this->logger->error('Fallback operation also failed', [
@@ -203,13 +203,13 @@ class ErrorRecovery
                     'primary_message' => $e->getMessage(),
                     'fallback_message' => $fallbackException->getMessage(),
                 ]);
-                
+
                 // Throw the original exception unless specified otherwise
                 throw $options['throw_fallback_exception'] ?? false ? $fallbackException : $e;
             }
         }
     }
-    
+
     /**
      * Execute operation with circuit breaker pattern.
      *
@@ -224,9 +224,9 @@ class ErrorRecovery
         $failureThreshold = $options['failure_threshold'] ?? 5;
         $recoveryTimeout = $options['recovery_timeout'] ?? 60; // seconds
         $successThreshold = $options['success_threshold'] ?? 3;
-        
+
         $circuit = $this->getCircuitState($circuitName);
-        
+
         // Check circuit state
         if ($circuit['state'] === self::CIRCUIT_OPEN) {
             // Check if recovery timeout has passed
@@ -243,14 +243,14 @@ class ErrorRecovery
                 throw new \RuntimeException('Circuit breaker is open');
             }
         }
-        
+
         try {
             $result = $operation();
-            
+
             // Operation succeeded
             if ($circuit['state'] === self::CIRCUIT_HALF_OPEN) {
                 $circuit['consecutive_successes']++;
-                
+
                 if ($circuit['consecutive_successes'] >= $successThreshold) {
                     $this->setCircuitState($circuitName, self::CIRCUIT_CLOSED);
                     $this->logger->info('Circuit breaker closed after successful recovery', [
@@ -262,14 +262,14 @@ class ErrorRecovery
                 $circuit['consecutive_failures'] = 0;
                 $this->circuitBreakerState[$circuitName] = $circuit;
             }
-            
+
             return $result;
         } catch (Throwable $e) {
             // Operation failed
             $circuit['consecutive_failures']++;
             $circuit['consecutive_successes'] = 0;
             $circuit['last_failure_time'] = time();
-            
+
             if ($circuit['consecutive_failures'] >= $failureThreshold) {
                 $this->setCircuitState($circuitName, self::CIRCUIT_OPEN);
                 $this->logger->error('Circuit breaker opened due to consecutive failures', [
@@ -278,13 +278,13 @@ class ErrorRecovery
                     'threshold' => $failureThreshold,
                 ]);
             }
-            
+
             $this->circuitBreakerState[$circuitName] = $circuit;
-            
+
             throw $e;
         }
     }
-    
+
     /**
      * Execute operation with graceful degradation.
      *
@@ -296,7 +296,7 @@ class ErrorRecovery
     {
         $degradedResponse = $options['degraded_response'] ?? null;
         $degradationHandler = $options['degradation_handler'] ?? null;
-        
+
         try {
             return $operation();
         } catch (Throwable $e) {
@@ -304,15 +304,15 @@ class ErrorRecovery
                 'exception' => get_class($e),
                 'message' => $e->getMessage(),
             ]);
-            
+
             if ($degradationHandler && is_callable($degradationHandler)) {
                 return $degradationHandler($e);
             }
-            
+
             if ($degradedResponse !== null) {
                 return $degradedResponse;
             }
-            
+
             // Default degraded response
             return [
                 'error' => [
@@ -323,7 +323,7 @@ class ErrorRecovery
             ];
         }
     }
-    
+
     /**
      * Register a fallback handler for a specific operation.
      *
@@ -335,7 +335,7 @@ class ErrorRecovery
     {
         $this->fallbackHandlers[$operation] = $handler;
     }
-    
+
     /**
      * Get circuit breaker state.
      *
@@ -351,7 +351,7 @@ class ErrorRecovery
             'last_failure_time' => 0,
         ];
     }
-    
+
     /**
      * Set circuit breaker state.
      *
@@ -363,17 +363,17 @@ class ErrorRecovery
     {
         $circuit = $this->getCircuitState($circuitName);
         $circuit['state'] = $state;
-        
+
         if ($state === self::CIRCUIT_CLOSED) {
             $circuit['consecutive_failures'] = 0;
             $circuit['consecutive_successes'] = 0;
         } elseif ($state === self::CIRCUIT_HALF_OPEN) {
             $circuit['consecutive_successes'] = 0;
         }
-        
+
         $this->circuitBreakerState[$circuitName] = $circuit;
     }
-    
+
     /**
      * Determine if an exception should be retried.
      *
@@ -386,26 +386,26 @@ class ErrorRecovery
         if ($exception instanceof \InvalidArgumentException) {
             return false;
         }
-        
+
         // Don't retry validation exceptions
         if (get_class($exception) === 'ModelContextProtocol\Server\Tools\Schema\ValidationException') {
             return false;
         }
-        
+
         // Retry transport-related errors
         if (str_contains(get_class($exception), 'Transport')) {
             return true;
         }
-        
+
         // Retry connection-related errors
         if (str_contains(get_class($exception), 'Connection')) {
             return true;
         }
-        
+
         // Default: retry for most exceptions
         return true;
     }
-    
+
     /**
      * Add jitter to delay to avoid thundering herd.
      *
@@ -417,10 +417,10 @@ class ErrorRecovery
         // Add ±25% jitter
         $jitterRange = (int)($delay * 0.25);
         $jitter = mt_rand(-$jitterRange, $jitterRange);
-        
+
         return max(0, $delay + $jitter);
     }
-    
+
     /**
      * Get recovery statistics.
      *
@@ -433,7 +433,7 @@ class ErrorRecovery
             'fallback_handlers' => array_keys($this->fallbackHandlers),
         ];
     }
-    
+
     /**
      * Reset all circuit breakers.
      *
@@ -444,4 +444,4 @@ class ErrorRecovery
         $this->circuitBreakerState = [];
         $this->logger->info('All circuit breakers reset');
     }
-} 
+}

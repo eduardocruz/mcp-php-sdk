@@ -11,7 +11,7 @@ class DynamicResource extends Resource
 
     /**
      * Create a new dynamic resource
-     * 
+     *
      * @param string $name The resource name
      * @param ResourceTemplate $template The resource template
      * @param callable $handler The handler function

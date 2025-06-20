@@ -13,7 +13,7 @@ class ResourceTemplate
 
     /**
      * Create a new resource template
-     * 
+     *
      * @param string $template The URI template
      * @param array|null $listOptions Options for listing this resource
      */

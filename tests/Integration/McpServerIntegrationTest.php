@@ -30,13 +30,13 @@ class McpServerIntegrationTest extends TestCase
                 'required' => ['operation', 'a', 'b'],
                 'description' => 'A simple calculator'
             ],
-            function(array $params) {
-                $result = match($params['operation']) {
+            function (array $params) {
+                $result = match ($params['operation']) {
                     'add' => $params['a'] + $params['b'],
                     'subtract' => $params['a'] - $params['b'],
                     default => throw new \InvalidArgumentException('Invalid operation')
                 };
-                
+
                 return [
                     'content' => [
                         [
@@ -51,7 +51,7 @@ class McpServerIntegrationTest extends TestCase
         // Test tool listing
         $listRequest = (object)['method' => 'tools/list', 'params' => []];
         $listResponse = $this->server->handleToolsList($listRequest);
-        
+
         $this->assertArrayHasKey('tools', $listResponse);
         $this->assertCount(1, $listResponse['tools']);
         $this->assertEquals('calculator', $listResponse['tools'][0]['name']);
@@ -64,7 +64,7 @@ class McpServerIntegrationTest extends TestCase
                 'params' => ['operation' => 'add', 'a' => 5, 'b' => 3]
             ]
         ];
-        
+
         $callResponse = $this->server->handleToolsCall($callRequest);
         $this->assertValidToolResponse($callResponse);
         $this->assertEquals('8', $callResponse['content'][0]['text']);
@@ -84,11 +84,11 @@ class McpServerIntegrationTest extends TestCase
         $template = new ResourceTemplate('user://{id}', [
             'description' => 'User profile resource'
         ]);
-        
+
         $dynamicResource = $this->server->registerResourceTemplate(
             'user-profile',
             $template,
-            function(string $uri, array $params) {
+            function (string $uri, array $params) {
                 return [
                     'content' => [
                         [
@@ -103,14 +103,14 @@ class McpServerIntegrationTest extends TestCase
         // Test resource listing
         $listRequest = (object)['method' => 'resources/list', 'params' => []];
         $listResponse = $this->server->handleResourcesList($listRequest);
-        
+
         $this->assertArrayHasKey('resources', $listResponse);
         $this->assertCount(1, $listResponse['resources']); // Only static resources
 
         // Test resource templates listing
         $templatesRequest = (object)['method' => 'resources/templates/list', 'params' => []];
         $templatesResponse = $this->server->handleResourceTemplatesList($templatesRequest);
-        
+
         $this->assertArrayHasKey('resourceTemplates', $templatesResponse);
         $this->assertCount(1, $templatesResponse['resourceTemplates']);
 
@@ -119,7 +119,7 @@ class McpServerIntegrationTest extends TestCase
             'method' => 'resources/read',
             'params' => ['uri' => 'greeting://hello']
         ];
-        
+
         $readStaticResponse = $this->server->handleResourceRead($readStaticRequest);
         $this->assertValidResourceResponse($readStaticResponse);
         $this->assertEquals('Hello, World!', $readStaticResponse['content'][0]['text']);
@@ -129,7 +129,7 @@ class McpServerIntegrationTest extends TestCase
             'method' => 'resources/read',
             'params' => ['uri' => 'user://123']
         ];
-        
+
         $readDynamicResponse = $this->server->handleResourceRead($readDynamicRequest);
         $this->assertValidResourceResponse($readDynamicResponse);
         $this->assertStringContainsString('123', $readDynamicResponse['content'][0]['text']);
@@ -148,7 +148,7 @@ class McpServerIntegrationTest extends TestCase
                 'required' => ['code', 'language'],
                 'description' => 'Generate code review prompt'
             ],
-            function(array $params) {
+            function (array $params) {
                 return [
                     'messages' => [
                         [
@@ -177,7 +177,7 @@ class McpServerIntegrationTest extends TestCase
         // Test prompt listing
         $listRequest = (object)['method' => 'prompts/list', 'params' => []];
         $listResponse = $this->server->handlePromptsList($listRequest);
-        
+
         $this->assertArrayHasKey('prompts', $listResponse);
         $this->assertCount(1, $listResponse['prompts']);
         $this->assertEquals('code-review', $listResponse['prompts'][0]['name']);
@@ -193,7 +193,7 @@ class McpServerIntegrationTest extends TestCase
                 ]
             ]
         ];
-        
+
         $getResponse = $this->server->handlePromptGet($getRequest);
         $this->assertValidPromptResponse($getResponse);
         $this->assertCount(2, $getResponse['messages']);
@@ -208,7 +208,7 @@ class McpServerIntegrationTest extends TestCase
             'method' => 'tools/call',
             'params' => ['name' => 'nonexistent', 'params' => []]
         ];
-        
+
         $callResponse = $this->server->handleToolsCall($callRequest);
         $this->assertValidErrorResponse($callResponse);
 
@@ -217,7 +217,7 @@ class McpServerIntegrationTest extends TestCase
             'method' => 'resources/read',
             'params' => ['uri' => 'nonexistent://resource']
         ];
-        
+
         $readResponse = $this->server->handleResourceRead($readRequest);
         $this->assertValidErrorResponse($readResponse);
 
@@ -226,7 +226,7 @@ class McpServerIntegrationTest extends TestCase
             'method' => 'prompts/get',
             'params' => ['name' => 'nonexistent', 'params' => []]
         ];
-        
+
         $getResponse = $this->server->handlePromptGet($getRequest);
         $this->assertValidErrorResponse($getResponse);
     }
@@ -256,7 +256,7 @@ class McpServerIntegrationTest extends TestCase
         ];
 
         $initResponse = $this->server->handleInitialize($initRequest);
-        
+
         $this->assertArrayHasKey('capabilities', $initResponse);
         $this->assertArrayHasKey('tools', $initResponse['capabilities']);
         $this->assertArrayHasKey('resources', $initResponse['capabilities']);
@@ -268,14 +268,16 @@ class McpServerIntegrationTest extends TestCase
     {
         // Register tool and verify notification manager integration
         $notificationManager = $this->server->getNotificationManager();
-        
+
         // Verify notification manager is accessible
         $this->assertInstanceOf(\ModelContextProtocol\Protocol\Notifications\NotificationManager::class, $notificationManager);
 
         $this->server->registerTool(
             'test-tool',
             ['properties' => ['test' => ['type' => 'string']]],
-            function() { return ['content' => []]; }
+            function () {
+                return ['content' => []];
+            }
         );
 
         // In a real scenario, notifications would be sent through the transport
@@ -283,4 +285,4 @@ class McpServerIntegrationTest extends TestCase
         // The queue should have 1 notification from the tool registration
         $this->assertEquals(1, $notificationManager->getQueueSize());
     }
-} 
+}

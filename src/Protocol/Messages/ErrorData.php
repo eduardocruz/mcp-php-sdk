@@ -4,7 +4,7 @@ namespace ModelContextProtocol\Protocol\Messages;
 
 /**
  * Represents error data in a JSON-RPC 2.0 response.
- * 
+ *
  * This class provides a structure for error information returned in error responses,
  * including an error code, message, and optional additional data.
  */
@@ -21,8 +21,9 @@ class ErrorData
         public int $code,
         public string $message,
         public mixed $data = null
-    ) {}
-    
+    ) {
+    }
+
     /**
      * Convert the error data to an associative array for serialization.
      *
@@ -34,14 +35,14 @@ class ErrorData
             'code' => $this->code,
             'message' => $this->message,
         ];
-        
+
         if ($this->data !== null) {
             $result['data'] = $this->data;
         }
-        
+
         return $result;
     }
-    
+
     /**
      * Create an ErrorData instance from an associative array.
      *

@@ -12,7 +12,7 @@ class PromptResponse
 
     /**
      * Create a new prompt response
-     * 
+     *
      * @param array $messages The messages array
      * @param string|null $description Optional description
      */

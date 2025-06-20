@@ -11,7 +11,7 @@ class StaticResource extends Resource
 
     /**
      * Create a new static resource
-     * 
+     *
      * @param string $name The resource name
      * @param string $uri The resource URI
      * @param array<mixed> $content The resource content
@@ -37,7 +37,7 @@ class StaticResource extends Resource
             'content' => $this->content
         ];
     }
-    
+
     /**
      * Update the content of this resource
      *
@@ -48,7 +48,7 @@ class StaticResource extends Resource
     {
         $this->content = $content;
     }
-    
+
     /**
      * Get the current content of this resource
      *
@@ -58,7 +58,7 @@ class StaticResource extends Resource
     {
         return $this->content;
     }
-    
+
     /**
      * Get the URI of this resource
      *

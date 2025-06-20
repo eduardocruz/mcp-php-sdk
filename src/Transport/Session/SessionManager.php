@@ -13,17 +13,17 @@ class SessionManager
      * @var string|null The current session ID
      */
     private ?string $sessionId = null;
-    
+
     /**
      * @var array<string, mixed> Session data
      */
     private array $sessionData = [];
-    
+
     /**
      * @var LoggerInterface|null The logger instance
      */
     private ?LoggerInterface $logger;
-    
+
     /**
      * Constructor.
      *
@@ -33,7 +33,7 @@ class SessionManager
     {
         $this->logger = $logger;
     }
-    
+
     /**
      * Generate a new session ID.
      *
@@ -42,14 +42,14 @@ class SessionManager
     public function generateSessionId(): string
     {
         $this->sessionId = bin2hex(random_bytes(16));
-        
+
         if ($this->logger) {
             $this->logger->debug('Generated new session ID: ' . $this->sessionId);
         }
-        
+
         return $this->sessionId;
     }
-    
+
     /**
      * Get the current session ID.
      *
@@ -59,7 +59,7 @@ class SessionManager
     {
         return $this->sessionId;
     }
-    
+
     /**
      * Set the session ID.
      *
@@ -69,12 +69,12 @@ class SessionManager
     public function setSessionId(string $sessionId): void
     {
         $this->sessionId = $sessionId;
-        
+
         if ($this->logger) {
             $this->logger->debug('Set session ID: ' . $this->sessionId);
         }
     }
-    
+
     /**
      * Clear the session.
      *
@@ -84,12 +84,12 @@ class SessionManager
     {
         $this->sessionId = null;
         $this->sessionData = [];
-        
+
         if ($this->logger) {
             $this->logger->debug('Session cleared');
         }
     }
-    
+
     /**
      * Store data in the session.
      *
@@ -101,7 +101,7 @@ class SessionManager
     {
         $this->sessionData[$key] = $value;
     }
-    
+
     /**
      * Get data from the session.
      *
@@ -113,7 +113,7 @@ class SessionManager
     {
         return $this->sessionData[$key] ?? $default;
     }
-    
+
     /**
      * Check if a key exists in the session.
      *
@@ -124,7 +124,7 @@ class SessionManager
     {
         return array_key_exists($key, $this->sessionData);
     }
-    
+
     /**
      * Remove data from the session.
      *
@@ -135,7 +135,7 @@ class SessionManager
     {
         unset($this->sessionData[$key]);
     }
-    
+
     /**
      * Get all session data.
      *

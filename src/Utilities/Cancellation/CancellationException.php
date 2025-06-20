@@ -11,7 +11,7 @@ class CancellationException extends \Exception
      * @var CancellationToken The cancellation token that was cancelled
      */
     private CancellationToken $token;
-    
+
     /**
      * Constructor.
      *
@@ -24,7 +24,7 @@ class CancellationException extends \Exception
         parent::__construct($message, 0, $previous);
         $this->token = $token;
     }
-    
+
     /**
      * Get the cancellation token.
      *
@@ -34,7 +34,7 @@ class CancellationException extends \Exception
     {
         return $this->token;
     }
-    
+
     /**
      * Get the cancellation reason.
      *
@@ -44,7 +44,7 @@ class CancellationException extends \Exception
     {
         return $this->token->getReason();
     }
-    
+
     /**
      * Get the timestamp when cancellation was requested.
      *
@@ -54,4 +54,4 @@ class CancellationException extends \Exception
     {
         return $this->token->getCancelledAt();
     }
-} 
+}

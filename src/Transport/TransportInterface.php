@@ -20,7 +20,7 @@ interface TransportInterface
      * @return void
      */
     public function start(): void;
-    
+
     /**
      * Sends a JSON-RPC message (request, response, or notification).
      *
@@ -29,14 +29,14 @@ interface TransportInterface
      * @return void
      */
     public function send(JsonRpcMessage $message, array $options = []): void;
-    
+
     /**
      * Closes the connection.
      *
      * @return void
      */
     public function close(): void;
-    
+
     /**
      * Registers a callback to be called when a message is received.
      *
@@ -44,7 +44,7 @@ interface TransportInterface
      * @return void
      */
     public function onMessage(callable $handler): void;
-    
+
     /**
      * Registers a callback to be called when an error occurs.
      *
@@ -52,7 +52,7 @@ interface TransportInterface
      * @return void
      */
     public function onError(callable $handler): void;
-    
+
     /**
      * Registers a callback to be called when the connection is closed.
      *
@@ -60,7 +60,7 @@ interface TransportInterface
      * @return void
      */
     public function onClose(callable $handler): void;
-    
+
     /**
      * Gets the session ID for this connection, if one exists.
      *

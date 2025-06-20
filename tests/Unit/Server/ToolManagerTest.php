@@ -29,8 +29,8 @@ class ToolManagerTest extends TestCase
             ],
             'required' => ['name']
         ];
-        
-        $handler = function(array $params) {
+
+        $handler = function (array $params) {
             return ['content' => [['type' => 'text', 'text' => 'Hello ' . $params['name']]]];
         };
 
@@ -49,8 +49,8 @@ class ToolManagerTest extends TestCase
             ],
             'description' => 'A test tool'
         ];
-        
-        $handler = function(array $params) {
+
+        $handler = function (array $params) {
             return ['content' => [['type' => 'text', 'text' => $params['message']]]];
         };
 
@@ -63,7 +63,9 @@ class ToolManagerTest extends TestCase
     public function testUnregisterTool(): void
     {
         $schema = ['properties' => ['test' => ['type' => 'string']]];
-        $handler = function() { return ['content' => []]; };
+        $handler = function () {
+            return ['content' => []];
+        };
 
         $this->toolManager->register('test-tool', $schema, $handler);
         $this->assertTrue($this->toolManager->has('test-tool'));
@@ -82,7 +84,9 @@ class ToolManagerTest extends TestCase
     public function testGetTool(): void
     {
         $schema = ['properties' => ['test' => ['type' => 'string']]];
-        $handler = function() { return ['content' => []]; };
+        $handler = function () {
+            return ['content' => []];
+        };
 
         $registered = $this->toolManager->register('test-tool', $schema, $handler);
         $retrieved = $this->toolManager->get('test-tool');
@@ -99,7 +103,9 @@ class ToolManagerTest extends TestCase
     public function testGetAllTools(): void
     {
         $schema = ['properties' => ['test' => ['type' => 'string']]];
-        $handler = function() { return ['content' => []]; };
+        $handler = function () {
+            return ['content' => []];
+        };
 
         $this->toolManager->register('tool1', $schema, $handler);
         $this->toolManager->register('tool2', $schema, $handler);
@@ -119,8 +125,8 @@ class ToolManagerTest extends TestCase
             ],
             'required' => ['name']
         ];
-        
-        $handler = function(array $params) {
+
+        $handler = function (array $params) {
             return ['content' => [['type' => 'text', 'text' => 'Hello ' . $params['name']]]];
         };
 
@@ -147,8 +153,8 @@ class ToolManagerTest extends TestCase
             ],
             'required' => ['name']
         ];
-        
-        $handler = function(array $params) {
+
+        $handler = function (array $params) {
             return ['content' => [['type' => 'text', 'text' => 'Hello ' . $params['name']]]];
         };
 
@@ -169,8 +175,10 @@ class ToolManagerTest extends TestCase
             'properties' => ['test' => ['type' => 'string']],
             'description' => 'Test tool 2'
         ];
-        
-        $handler = function() { return ['content' => []]; };
+
+        $handler = function () {
+            return ['content' => []];
+        };
 
         $this->toolManager->register('tool1', $schema1, $handler);
         $this->toolManager->register('tool2', $schema2, $handler);
@@ -179,7 +187,7 @@ class ToolManagerTest extends TestCase
 
         $this->assertArrayHasKey('tools', $list);
         $this->assertCount(2, $list['tools']);
-        
+
         $toolNames = array_column($list['tools'], 'name');
         $this->assertContains('tool1', $toolNames);
         $this->assertContains('tool2', $toolNames);
@@ -193,8 +201,8 @@ class ToolManagerTest extends TestCase
             ['name'],
             'A test tool'
         );
-        
-        $handler = function(array $params) {
+
+        $handler = function (array $params) {
             return ['content' => [['type' => 'text', 'text' => 'Hello ' . $params['name']]]];
         };
 
@@ -207,7 +215,9 @@ class ToolManagerTest extends TestCase
     public function testClearAllTools(): void
     {
         $schema = ['properties' => ['test' => ['type' => 'string']]];
-        $handler = function() { return ['content' => []]; };
+        $handler = function () {
+            return ['content' => []];
+        };
 
         $this->toolManager->register('tool1', $schema, $handler);
         $this->toolManager->register('tool2', $schema, $handler);
@@ -219,4 +229,4 @@ class ToolManagerTest extends TestCase
 
         $this->assertCount(0, $this->toolManager->getAll());
     }
-} 
+}

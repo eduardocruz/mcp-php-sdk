@@ -15,7 +15,7 @@ class Tool
 
     /**
      * Create a new tool
-     * 
+     *
      * @param string $name The tool name
      * @param ToolSchema $schema The tool schema
      * @param callable $handler The handler function that executes the tool
@@ -63,7 +63,7 @@ class Tool
     public function getMetadata(): array
     {
         $schemaArray = $this->schema->toArray();
-        
+
         return [
             'name' => $this->name,
             'description' => $this->schema->getDescription() ?? '',

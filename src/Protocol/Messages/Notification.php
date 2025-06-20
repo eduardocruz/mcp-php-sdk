@@ -4,7 +4,7 @@ namespace ModelContextProtocol\Protocol\Messages;
 
 /**
  * Represents a JSON-RPC 2.0 notification.
- * 
+ *
  * A notification is a one-way message that does not expect a response.
  * It includes a method name and optional parameters, but no ID.
  */
@@ -19,8 +19,9 @@ class Notification extends JsonRpcMessage
     public function __construct(
         public string $method,
         public ?array $params = null
-    ) {}
-    
+    ) {
+    }
+
     /**
      * Convert the notification to an associative array for serialization.
      *
@@ -30,14 +31,14 @@ class Notification extends JsonRpcMessage
     {
         $result = parent::toArray();
         $result['method'] = $this->method;
-        
+
         if ($this->params !== null) {
             $result['params'] = $this->params;
         }
-        
+
         return $result;
     }
-    
+
     /**
      * Create a Notification instance from an associative array.
      *

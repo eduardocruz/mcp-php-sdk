@@ -10,7 +10,7 @@ use Throwable;
 
 /**
  * Manages outbound notifications from server to client.
- * 
+ *
  * Handles notification queuing, delivery, error handling, and subscription management.
  */
 class NotificationManager
@@ -19,37 +19,37 @@ class NotificationManager
      * @var TransportInterface|null The transport for sending notifications
      */
     private ?TransportInterface $transport = null;
-    
+
     /**
      * @var LoggerInterface The logger instance
      */
     private LoggerInterface $logger;
-    
+
     /**
      * @var array<string, array<string, mixed>> Resource subscriptions by URI
      */
     private array $resourceSubscriptions = [];
-    
+
     /**
      * @var array<Notification> Queued notifications waiting to be sent
      */
     private array $notificationQueue = [];
-    
+
     /**
      * @var bool Whether notifications are currently being processed
      */
     private bool $processingQueue = false;
-    
+
     /**
      * @var int Maximum number of delivery retries
      */
     private int $maxRetries = 3;
-    
+
     /**
      * @var array<string, int> Failed notification retry counts
      */
     private array $retryCount = [];
-    
+
     /**
      * Constructor.
      *
@@ -59,7 +59,7 @@ class NotificationManager
     {
         $this->logger = $logger ?? new ConsoleLogger();
     }
-    
+
     /**
      * Set the transport for sending notifications.
      *
@@ -69,13 +69,13 @@ class NotificationManager
     public function setTransport(?TransportInterface $transport): void
     {
         $this->transport = $transport;
-        
+
         // Process any queued notifications
         if ($transport !== null) {
             $this->processNotificationQueue();
         }
     }
-    
+
     /**
      * Send a general message notification to the client.
      *
@@ -91,10 +91,10 @@ class NotificationManager
             'message' => $message,
             'data' => $data
         ]);
-        
+
         $this->queueNotification($notification);
     }
-    
+
     /**
      * Send a resource list changed notification.
      *
@@ -105,7 +105,7 @@ class NotificationManager
         $notification = new Notification('notifications/resources/list_changed');
         $this->queueNotification($notification);
     }
-    
+
     /**
      * Send a resource updated notification for a specific resource.
      *
@@ -119,16 +119,16 @@ class NotificationManager
         if (!isset($this->resourceSubscriptions[$uri])) {
             return;
         }
-        
+
         $params = ['uri' => $uri];
         if (!empty($content)) {
             $params['content'] = $content;
         }
-        
+
         $notification = new Notification('notifications/resources/updated', $params);
         $this->queueNotification($notification);
     }
-    
+
     /**
      * Send a tools list changed notification.
      *
@@ -139,7 +139,7 @@ class NotificationManager
         $notification = new Notification('notifications/tools/list_changed');
         $this->queueNotification($notification);
     }
-    
+
     /**
      * Send a prompts list changed notification.
      *
@@ -150,7 +150,7 @@ class NotificationManager
         $notification = new Notification('notifications/prompts/list_changed');
         $this->queueNotification($notification);
     }
-    
+
     /**
      * Subscribe to updates for a specific resource.
      *
@@ -161,13 +161,13 @@ class NotificationManager
     public function subscribeToResource(string $uri, array $options = []): void
     {
         $this->resourceSubscriptions[$uri] = $options;
-        
+
         $this->logger->debug('Subscribed to resource updates', [
             'uri' => $uri,
             'options' => $options
         ]);
     }
-    
+
     /**
      * Unsubscribe from updates for a specific resource.
      *
@@ -178,13 +178,13 @@ class NotificationManager
     {
         if (isset($this->resourceSubscriptions[$uri])) {
             unset($this->resourceSubscriptions[$uri]);
-            
+
             $this->logger->debug('Unsubscribed from resource updates', [
                 'uri' => $uri
             ]);
         }
     }
-    
+
     /**
      * Get all current resource subscriptions.
      *
@@ -194,7 +194,7 @@ class NotificationManager
     {
         return $this->resourceSubscriptions;
     }
-    
+
     /**
      * Check if subscribed to a specific resource.
      *
@@ -205,7 +205,7 @@ class NotificationManager
     {
         return isset($this->resourceSubscriptions[$uri]);
     }
-    
+
     /**
      * Queue a notification for delivery.
      *
@@ -215,18 +215,18 @@ class NotificationManager
     private function queueNotification(Notification $notification): void
     {
         $this->notificationQueue[] = $notification;
-        
+
         $this->logger->debug('Queued notification', [
             'method' => $notification->method,
             'queueSize' => count($this->notificationQueue)
         ]);
-        
+
         // Try to process immediately if transport is available
         if ($this->transport !== null && !$this->processingQueue) {
             $this->processNotificationQueue();
         }
     }
-    
+
     /**
      * Process all queued notifications.
      *
@@ -237,9 +237,9 @@ class NotificationManager
         if ($this->processingQueue || $this->transport === null) {
             return;
         }
-        
+
         $this->processingQueue = true;
-        
+
         try {
             while (!empty($this->notificationQueue)) {
                 $notification = array_shift($this->notificationQueue);
@@ -249,7 +249,7 @@ class NotificationManager
             $this->processingQueue = false;
         }
     }
-    
+
     /**
      * Deliver a single notification with error handling and retries.
      *
@@ -264,26 +264,25 @@ class NotificationManager
             ]);
             return;
         }
-        
+
         $notificationId = $this->getNotificationId($notification);
-        
+
         try {
             $this->transport->send($notification);
-            
+
             // Clear retry count on successful delivery
             if (isset($this->retryCount[$notificationId])) {
                 unset($this->retryCount[$notificationId]);
             }
-            
+
             $this->logger->debug('Notification delivered successfully', [
                 'method' => $notification->method
             ]);
-            
         } catch (Throwable $e) {
             $this->handleDeliveryFailure($notification, $e);
         }
     }
-    
+
     /**
      * Handle notification delivery failure with retry logic.
      *
@@ -295,19 +294,19 @@ class NotificationManager
     {
         $notificationId = $this->getNotificationId($notification);
         $retryCount = $this->retryCount[$notificationId] ?? 0;
-        
+
         $this->logger->error('Notification delivery failed', [
             'method' => $notification->method,
             'error' => $error->getMessage(),
             'retryCount' => $retryCount,
             'maxRetries' => $this->maxRetries
         ]);
-        
+
         if ($retryCount < $this->maxRetries) {
             // Increment retry count and re-queue
             $this->retryCount[$notificationId] = $retryCount + 1;
             $this->notificationQueue[] = $notification;
-            
+
             $this->logger->debug('Notification queued for retry', [
                 'method' => $notification->method,
                 'retryCount' => $this->retryCount[$notificationId]
@@ -315,14 +314,14 @@ class NotificationManager
         } else {
             // Max retries exceeded, give up
             unset($this->retryCount[$notificationId]);
-            
+
             $this->logger->error('Notification delivery failed permanently', [
                 'method' => $notification->method,
                 'error' => $error->getMessage()
             ]);
         }
     }
-    
+
     /**
      * Generate a unique identifier for a notification (for retry tracking).
      *
@@ -333,7 +332,7 @@ class NotificationManager
     {
         return md5($notification->method . serialize($notification->params));
     }
-    
+
     /**
      * Clear all queued notifications.
      *
@@ -344,14 +343,14 @@ class NotificationManager
         $queueSize = count($this->notificationQueue);
         $this->notificationQueue = [];
         $this->retryCount = [];
-        
+
         if ($queueSize > 0) {
             $this->logger->info('Cleared notification queue', [
                 'clearedCount' => $queueSize
             ]);
         }
     }
-    
+
     /**
      * Get the current queue size.
      *
@@ -361,7 +360,7 @@ class NotificationManager
     {
         return count($this->notificationQueue);
     }
-    
+
     /**
      * Set the maximum number of delivery retries.
      *
@@ -372,4 +371,4 @@ class NotificationManager
     {
         $this->maxRetries = max(0, $maxRetries);
     }
-} 
+}

@@ -16,8 +16,9 @@ class Implementation
     public function __construct(
         public string $name,
         public string $version
-    ) {}
-    
+    ) {
+    }
+
     /**
      * Convert the implementation data to an array.
      *
@@ -30,7 +31,7 @@ class Implementation
             'version' => $this->version
         ];
     }
-    
+
     /**
      * Create an Implementation instance from an array.
      *

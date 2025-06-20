@@ -13,7 +13,7 @@ class JsonRpcMessageTest extends TestCase
     public function testRequestCreation(): void
     {
         $request = new Request('test-123', 'test/method', ['param' => 'value']);
-        
+
         $this->assertEquals('2.0', $request->jsonrpc);
         $this->assertEquals('test-123', $request->id);
         $this->assertEquals('test/method', $request->method);
@@ -26,7 +26,7 @@ class JsonRpcMessageTest extends TestCase
         $json = json_encode($request);
         $this->assertNotFalse($json);
         $decoded = json_decode($json, true);
-        
+
         $this->assertEquals('2.0', $decoded['jsonrpc']);
         $this->assertEquals('test-123', $decoded['id']);
         $this->assertEquals('test/method', $decoded['method']);
@@ -36,7 +36,7 @@ class JsonRpcMessageTest extends TestCase
     public function testResponseCreation(): void
     {
         $response = new Response('test-123', ['result' => 'success']);
-        
+
         $this->assertEquals('2.0', $response->jsonrpc);
         $this->assertEquals('test-123', $response->id);
         $this->assertEquals(['result' => 'success'], $response->result);
@@ -46,9 +46,9 @@ class JsonRpcMessageTest extends TestCase
     public function testErrorResponseCreation(): void
     {
         $errorData = new ErrorData(-32603, 'Internal error');
-        
+
         $response = new Response('test-123', null, $errorData);
-        
+
         $this->assertEquals('2.0', $response->jsonrpc);
         $this->assertEquals('test-123', $response->id);
         $this->assertNull($response->result);
@@ -58,7 +58,7 @@ class JsonRpcMessageTest extends TestCase
     public function testNotificationCreation(): void
     {
         $notification = new Notification('test/notification', ['data' => 'value']);
-        
+
         $this->assertEquals('2.0', $notification->jsonrpc);
         $this->assertEquals('test/notification', $notification->method);
         $this->assertEquals(['data' => 'value'], $notification->params);
@@ -71,7 +71,7 @@ class JsonRpcMessageTest extends TestCase
         $json = json_encode($notification);
         $this->assertNotFalse($json);
         $decoded = json_decode($json, true);
-        
+
         $this->assertEquals('2.0', $decoded['jsonrpc']);
         $this->assertEquals('test/notification', $decoded['method']);
         $this->assertEquals(['data' => 'value'], $decoded['params']);
@@ -81,7 +81,7 @@ class JsonRpcMessageTest extends TestCase
     public function testRequestWithoutParams(): void
     {
         $request = new Request('test-123', 'test/method');
-        
+
         $this->assertEquals('test/method', $request->method);
         $this->assertNull($request->params);
     }
@@ -89,8 +89,8 @@ class JsonRpcMessageTest extends TestCase
     public function testNotificationWithoutParams(): void
     {
         $notification = new Notification('test/notification');
-        
+
         $this->assertEquals('test/notification', $notification->method);
         $this->assertNull($notification->params);
     }
-} 
+}

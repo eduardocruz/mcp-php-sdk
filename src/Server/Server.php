@@ -26,7 +26,7 @@ use Throwable;
 
 /**
  * An MCP server on top of a pluggable transport.
- * 
+ *
  * This server will automatically respond to the initialization flow as initiated from the client.
  */
 class Server
@@ -35,62 +35,62 @@ class Server
      * @var TransportInterface|null The transport interface
      */
     private ?TransportInterface $transport = null;
-    
+
     /**
      * @var ClientCapabilities|null The client's capabilities, available after initialization
      */
     private ?ClientCapabilities $clientCapabilities = null;
-    
+
     /**
      * @var Implementation|null The client's version information, available after initialization
      */
     private ?Implementation $clientVersion = null;
-    
+
     /**
      * @var ServerCapabilities The server's capabilities
      */
     private ServerCapabilities $capabilities;
-    
+
     /**
      * @var array<string, callable> Request handlers registered by method name
      */
     private array $requestHandlers = [];
-    
+
     /**
      * @var array<string, callable> Notification handlers registered by method name
      */
     private array $notificationHandlers = [];
-    
+
     /**
      * @var bool Whether the server has been initialized
      */
     private bool $initialized = false;
-    
+
     /**
      * @var callable|null Callback for when initialization has fully completed (i.e., the client has sent an `initialized` notification)
      */
     private $initializedHandler = null;
-    
+
     /**
      * @var HealthMonitor|null Optional health monitor for connection monitoring
      */
     private ?HealthMonitor $healthMonitor = null;
-    
+
     /**
      * @var CancellationManager The cancellation manager for request cancellation
      */
     private CancellationManager $cancellationManager;
-    
+
     /**
      * @var LoggerInterface The logger instance
      */
     private LoggerInterface $logger;
-    
+
     /**
      * @var NotificationManager The notification manager
      */
     private NotificationManager $notificationManager;
-    
+
     /**
      * Constructor.
      *
@@ -109,7 +109,7 @@ class Server
         $this->logger = $logger ?? new ConsoleLogger();
         $this->notificationManager = new NotificationManager($this->logger);
         $this->cancellationManager = new CancellationManager($this->logger);
-        
+
         // Register built-in handlers
         $this->setRequestHandler('initialize', [$this, 'handleInitialize']);
         $this->setRequestHandler('ping', [$this, 'handlePing']);
@@ -118,7 +118,7 @@ class Server
         $this->setNotificationHandler('notifications/initialized', [$this, 'handleInitialized']);
         $this->setNotificationHandler('notifications/cancelled', [$this, 'handleCancelled']);
     }
-    
+
     /**
      * Get the transport instance.
      *
@@ -128,7 +128,7 @@ class Server
     {
         return $this->transport;
     }
-    
+
     /**
      * Check if the server is connected to a transport.
      *
@@ -138,7 +138,7 @@ class Server
     {
         return $this->transport !== null;
     }
-    
+
     /**
      * Attaches to the given transport, starts it, and starts listening for messages.
      *
@@ -155,27 +155,27 @@ class Server
         if ($this->transport !== null) {
             throw new ConnectionException('Server is already connected to a transport');
         }
-        
+
         $this->transport = $transport;
-        
+
         // Set up transport event handlers
         $transport->onMessage([$this, 'handleMessage']);
         $transport->onError([$this, 'handleError']);
         $transport->onClose([$this, 'handleClose']);
-        
+
         // Connect notification manager to transport
         $this->notificationManager->setTransport($transport);
-        
+
         // Start the transport
         $transport->start();
-        
+
         $this->logger->info('Server connected to transport', [
             'serverName' => $this->serverInfo->name,
             'serverVersion' => $this->serverInfo->version,
             'sessionId' => $transport->getSessionId()
         ]);
     }
-    
+
     /**
      * Close the connection to the transport.
      *
@@ -185,16 +185,16 @@ class Server
     {
         if ($this->transport !== null) {
             $this->logger->info('Closing server connection');
-            
+
             // Disconnect notification manager
             $this->notificationManager->setTransport(null);
             $this->notificationManager->clearQueue();
-            
+
             $this->transport->close();
             $this->transport = null;
         }
     }
-    
+
     /**
      * Handle an incoming JSON-RPC message.
      *
@@ -220,7 +220,7 @@ class Server
             ]);
         }
     }
-    
+
     /**
      * Handle a transport error.
      *
@@ -234,7 +234,7 @@ class Server
             'exception' => get_class($error)
         ]);
     }
-    
+
     /**
      * Handle transport connection close.
      *
@@ -245,7 +245,7 @@ class Server
         $this->logger->info('Transport connection closed');
         $this->transport = null;
     }
-    
+
     /**
      * Handle a request message.
      *
@@ -255,12 +255,12 @@ class Server
     private function handleRequest(Request $request): void
     {
         $method = $request->method;
-        
+
         $this->logger->debug('Handling request', [
             'method' => $method,
             'id' => $request->id
         ]);
-        
+
         if (!$this->initialized && $method !== 'initialize') {
             $response = ErrorResponseBuilder::createErrorResponse(
                 $request,
@@ -270,7 +270,7 @@ class Server
             $this->sendRawResponse($response);
             return;
         }
-        
+
         if (isset($this->requestHandlers[$method])) {
             // Register request for cancellation tracking if it has an ID
             $cancellationToken = null;
@@ -280,13 +280,13 @@ class Server
                     'startedAt' => microtime(true)
                 ]);
             }
-            
+
             try {
                 $handler = $this->requestHandlers[$method];
-                
+
                 // Call handler with cancellation token if supported
                 $result = $this->callHandlerWithCancellation($handler, $request, $cancellationToken);
-                
+
                 if (is_array($result)) {
                     $this->sendResponse($request, $result);
                 } elseif ($result instanceof Response) {
@@ -305,7 +305,7 @@ class Server
                     'error' => $e->getMessage(),
                     'exception' => get_class($e)
                 ]);
-                
+
                 $response = ErrorResponseBuilder::fromException($request, $e);
                 $this->sendRawResponse($response);
             } finally {
@@ -324,7 +324,7 @@ class Server
             $this->sendRawResponse($response);
         }
     }
-    
+
     /**
      * Handle a notification message.
      *
@@ -334,18 +334,18 @@ class Server
     private function handleNotification(Notification $notification): void
     {
         $method = $notification->method;
-        
+
         $this->logger->debug('Handling notification', [
             'method' => $method
         ]);
-        
+
         if (!$this->initialized && $method !== 'notifications/cancelled') {
             $this->logger->warning('Received notification before initialization', [
                 'method' => $method
             ]);
             return;
         }
-        
+
         if (isset($this->notificationHandlers[$method])) {
             try {
                 $handler = $this->notificationHandlers[$method];
@@ -361,7 +361,7 @@ class Server
             $this->logger->debug('No handler for notification', ['method' => $method]);
         }
     }
-    
+
     /**
      * Handler for the initialize request.
      *
@@ -373,26 +373,26 @@ class Server
         if ($this->initialized) {
             throw new \RuntimeException('Server already initialized');
         }
-        
+
         $params = InitializeParams::fromArray($request->params ?? []);
         $requestedVersion = $params->protocolVersion;
-        
+
         $this->clientCapabilities = $params->capabilities;
         $this->clientVersion = $params->clientInfo;
-        
+
         $this->logger->info('Server initialized', [
             'clientName' => $params->clientInfo->name,
             'clientVersion' => $params->clientInfo->version,
             'requestedVersion' => $requestedVersion
         ]);
-        
+
         // Choose protocol version
         $protocolVersion = in_array($requestedVersion, Constants::SUPPORTED_PROTOCOL_VERSIONS)
             ? $requestedVersion
             : Constants::LATEST_PROTOCOL_VERSION;
-        
+
         $this->initialized = true;
-        
+
         // Prepare result
         $result = new InitializeResult(
             $protocolVersion,
@@ -400,10 +400,10 @@ class Server
             $this->serverInfo,
             $this->instructions
         );
-        
+
         return $result->toArray();
     }
-    
+
     /**
      * Handler for the 'initialized' notification.
      *
@@ -413,12 +413,12 @@ class Server
     public function handleInitialized(Notification $notification): void
     {
         $this->logger->info('Client sent initialized notification');
-        
+
         if ($this->initializedHandler !== null) {
             ($this->initializedHandler)();
         }
     }
-    
+
     /**
      * Handler for the ping request.
      *
@@ -431,10 +431,10 @@ class Server
         if ($this->healthMonitor !== null && is_string($request->id)) {
             $this->healthMonitor->handlePingResponse($request->id);
         }
-        
+
         return [];
     }
-    
+
     /**
      * Handler for the 'cancelled' notification.
      *
@@ -444,29 +444,29 @@ class Server
     public function handleCancelled(Notification $notification): void
     {
         $requestId = $notification->params['requestId'] ?? null;
-        
+
         if ($requestId === null) {
             $this->logger->warning('Received cancelled notification without requestId');
             return;
         }
-        
+
         $reason = $notification->params['reason'] ?? null;
-        
+
         $this->logger->debug('Request cancelled by client', [
             'requestId' => $requestId,
             'reason' => $reason
         ]);
-        
+
         // Cancel the request using the cancellation manager
         $cancelled = $this->cancellationManager->cancelRequest($requestId, $reason);
-        
+
         if (!$cancelled) {
             $this->logger->debug('Cancellation requested for unknown or already completed request', [
                 'requestId' => $requestId
             ]);
         }
     }
-    
+
     /**
      * Handler for the 'resources/subscribe' request.
      *
@@ -476,22 +476,22 @@ class Server
     public function handleResourceSubscribe(Request $request): array
     {
         $uri = $request->params['uri'] ?? null;
-        
+
         if ($uri === null) {
             throw new \InvalidArgumentException('Missing required parameter: uri');
         }
-        
+
         $options = $request->params['options'] ?? [];
         $this->notificationManager->subscribeToResource($uri, $options);
-        
+
         $this->logger->info('Resource subscription added', [
             'uri' => $uri,
             'options' => $options
         ]);
-        
+
         return [];
     }
-    
+
     /**
      * Handler for the 'resources/unsubscribe' request.
      *
@@ -501,20 +501,20 @@ class Server
     public function handleResourceUnsubscribe(Request $request): array
     {
         $uri = $request->params['uri'] ?? null;
-        
+
         if ($uri === null) {
             throw new \InvalidArgumentException('Missing required parameter: uri');
         }
-        
+
         $this->notificationManager->unsubscribeFromResource($uri);
-        
+
         $this->logger->info('Resource subscription removed', [
             'uri' => $uri
         ]);
-        
+
         return [];
     }
-    
+
     /**
      * Send a response to a request.
      *
@@ -528,11 +528,11 @@ class Server
             $this->logger->warning('Cannot send response: not connected to transport');
             return;
         }
-        
+
         $response = new Response($request->id, $result);
         $this->sendRawResponse($response);
     }
-    
+
     /**
      * Send a raw response.
      *
@@ -545,7 +545,7 @@ class Server
             $this->logger->warning('Cannot send response: not connected to transport');
             return;
         }
-        
+
         try {
             $this->transport->send($response);
         } catch (Throwable $e) {
@@ -555,7 +555,7 @@ class Server
             ]);
         }
     }
-    
+
     /**
      * Send an error response to a request.
      *
@@ -572,10 +572,10 @@ class Server
             $this->logger->warning('Cannot send error response: not connected to transport');
             return;
         }
-        
+
         $error = new ErrorData($code, $message, $data);
         $response = new Response($request->id, null, $error);
-        
+
         try {
             $this->transport->send($response);
         } catch (Throwable $e) {
@@ -585,7 +585,7 @@ class Server
             ]);
         }
     }
-    
+
     /**
      * Send a notification to the client.
      *
@@ -598,7 +598,7 @@ class Server
             $this->logger->warning('Cannot send notification: not connected to transport');
             return;
         }
-        
+
         try {
             $this->transport->send($notification);
         } catch (Throwable $e) {
@@ -608,7 +608,7 @@ class Server
             ]);
         }
     }
-    
+
     /**
      * Get the notification manager.
      *
@@ -618,7 +618,7 @@ class Server
     {
         return $this->notificationManager;
     }
-    
+
     /**
      * Set a handler for a specific request method.
      *
@@ -630,7 +630,7 @@ class Server
     {
         $this->requestHandlers[$method] = $handler;
     }
-    
+
     /**
      * Remove a request handler.
      *
@@ -641,7 +641,7 @@ class Server
     {
         unset($this->requestHandlers[$method]);
     }
-    
+
     /**
      * Check if a request handler exists for a method.
      *
@@ -652,7 +652,7 @@ class Server
     {
         return isset($this->requestHandlers[$method]);
     }
-    
+
     /**
      * Set a handler for a specific notification method.
      *
@@ -664,7 +664,7 @@ class Server
     {
         $this->notificationHandlers[$method] = $handler;
     }
-    
+
     /**
      * Remove a notification handler.
      *
@@ -675,7 +675,7 @@ class Server
     {
         unset($this->notificationHandlers[$method]);
     }
-    
+
     /**
      * Check if a notification handler exists for a method.
      *
@@ -686,7 +686,7 @@ class Server
     {
         return isset($this->notificationHandlers[$method]);
     }
-    
+
     /**
      * Set the callback for when initialization is fully complete.
      *
@@ -697,7 +697,7 @@ class Server
     {
         $this->initializedHandler = $handler;
     }
-    
+
     /**
      * Register additional server capabilities.
      *
@@ -710,14 +710,14 @@ class Server
         if ($this->initialized) {
             throw new \RuntimeException('Cannot register capabilities after initialization');
         }
-        
+
         if ($this->transport !== null) {
             throw new \RuntimeException('Cannot register capabilities after connecting to transport');
         }
-        
+
         $this->capabilities = $this->capabilities->merge($capabilities);
     }
-    
+
     /**
      * Get the client's capabilities, available after initialization.
      *
@@ -727,7 +727,7 @@ class Server
     {
         return $this->clientCapabilities;
     }
-    
+
     /**
      * Get the client's version information, available after initialization.
      *
@@ -737,7 +737,7 @@ class Server
     {
         return $this->clientVersion;
     }
-    
+
     /**
      * Set the health monitor for connection monitoring.
      *
@@ -748,7 +748,7 @@ class Server
     {
         $this->healthMonitor = $healthMonitor;
     }
-    
+
     /**
      * Get the cancellation manager.
      *
@@ -758,7 +758,7 @@ class Server
     {
         return $this->cancellationManager;
     }
-    
+
     /**
      * Call a handler with optional cancellation token support.
      *
@@ -783,14 +783,16 @@ class Server
                 return $handler($request);
             }
             $parameters = $reflection->getParameters();
-            
+
             // If handler has 2+ parameters and the second one is CancellationToken, pass it
             if (count($parameters) >= 2) {
                 $secondParam = $parameters[1];
                 $paramType = $secondParam->getType();
-                
-                if ($paramType instanceof \ReflectionNamedType && 
-                    $paramType->getName() === CancellationToken::class) {
+
+                if (
+                    $paramType instanceof \ReflectionNamedType &&
+                    $paramType->getName() === CancellationToken::class
+                ) {
                     return $handler($request, $cancellationToken);
                 }
             }
@@ -800,7 +802,7 @@ class Server
                 'error' => $e->getMessage()
             ]);
         }
-        
+
         // Default: call handler with just the request
         return $handler($request);
     }

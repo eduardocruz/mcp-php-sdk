@@ -15,7 +15,7 @@ class Prompt
 
     /**
      * Create a new prompt
-     * 
+     *
      * @param string $name The prompt name
      * @param PromptSchema $schema The prompt schema
      * @param callable $handler The handler function that executes the prompt
@@ -60,7 +60,7 @@ class Prompt
     public function getMetadata(): array
     {
         $schemaArray = $this->schema->toArray();
-        
+
         return [
             'name' => $this->name,
             'description' => $this->schema->getDescription() ?? '',

@@ -12,7 +12,7 @@ class ResourceManager
     /** @var Resource[] */
     private array $resources = [];
     private array $changeListeners = [];
-    
+
     /**
      * @var NotificationManager|null The notification manager for sending notifications
      */
@@ -28,7 +28,7 @@ class ResourceManager
     {
         $this->notificationManager = $notificationManager;
     }
-    
+
     /**
      * Register a static resource
      */
@@ -55,7 +55,7 @@ class ResourceManager
         if (is_string($template)) {
             $template = new ResourceTemplate($template);
         }
-        
+
         $resource = new DynamicResource($name, $template, $handler);
         $this->resources[$name] = $resource;
         $this->notifyListeners();
@@ -75,7 +75,7 @@ class ResourceManager
 
     /**
      * Resolve a URI to a resource
-     * 
+     *
      * @param string $uri The URI to resolve
      * @return array|null The resolved resource or null if not found
      */
@@ -90,7 +90,7 @@ class ResourceManager
                 ];
             }
         }
-        
+
         return null;
     }
 
@@ -116,13 +116,13 @@ class ResourceManager
     public function list(): array
     {
         $result = [];
-        
+
         foreach ($this->resources as $name => $resource) {
             // Only include static resources in the main list
             if ($resource instanceof StaticResource) {
                 $template = $resource->getTemplate();
                 $listOptions = $template->getListOptions();
-                
+
                 if ($listOptions !== null) {
                     $result[] = [
                         'name' => $name,
@@ -132,7 +132,7 @@ class ResourceManager
                 }
             }
         }
-        
+
         return $result;
     }
 
@@ -156,14 +156,14 @@ class ResourceManager
         $resource = $this->getResource($name);
         if ($resource instanceof StaticResource) {
             $resource->updateContent($content);
-            
+
             // Send resource updated notification if notification manager is available
             if ($this->notificationManager !== null) {
                 $this->notificationManager->sendResourceUpdated($resource->getUri(), $content);
             }
         }
     }
-    
+
     /**
      * Notify all listeners of a change
      */
@@ -173,7 +173,7 @@ class ResourceManager
         foreach ($this->changeListeners as $listener) {
             $listener($resources);
         }
-        
+
         // Send resource list changed notification if notification manager is available
         if ($this->notificationManager !== null) {
             $this->notificationManager->sendResourceListChanged();

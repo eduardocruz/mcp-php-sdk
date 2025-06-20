@@ -27,7 +27,7 @@ use ModelContextProtocol\Utilities\Cancellation\CancellationToken;
 
 /**
  * High-level MCP server that provides a simpler API for working with resources, tools, and prompts.
- * 
+ *
  * For advanced usage (like sending notifications or setting custom request handlers), use the underlying
  * Server instance available via the server property.
  */
@@ -37,49 +37,49 @@ class McpServer
      * @var Server The underlying Server instance, useful for advanced operations like sending notifications
      */
     private Server $server;
-    
+
     /**
      * @var LoggerInterface The logger instance
      */
     private LoggerInterface $logger;
-    
+
     // Note: Resource tracking is handled by ResourceManager, these properties are not needed
-    
+
     /**
      * @var ToolManager The tool manager
      */
     private ToolManager $toolManager;
-    
+
     /**
      * @var ResourceManager The resource manager
      */
     private ResourceManager $resourceManager;
-    
+
     /**
      * @var PromptManager The prompt manager
      */
     private PromptManager $promptManager;
-    
+
     /**
      * @var bool Whether tool handlers have been initialized
      */
     private bool $toolHandlersInitialized = false;
-    
+
     /**
      * @var bool Whether resource handlers have been initialized
      */
     private bool $resourceHandlersInitialized = false;
-    
+
     /**
      * @var bool Whether prompt handlers have been initialized
      */
     private bool $promptHandlersInitialized = false;
-    
+
     /**
      * @var HealthMonitor The health monitor for connection monitoring
      */
     private HealthMonitor $healthMonitor;
-    
+
     /**
      * Constructor.
      *
@@ -97,42 +97,42 @@ class McpServer
         ?LoggerInterface $logger = null
     ) {
         $this->logger = $logger ?? new ConsoleLogger();
-        
+
         if (is_array($capabilities)) {
             $capabilities = ServerCapabilities::fromArray($capabilities);
         }
-        
+
         $this->server = new Server(
             new Implementation($name, $version),
             $capabilities,
             $instructions,
             $this->logger
         );
-        
+
         // Initialize tool manager
         $this->toolManager = new ToolManager();
-        
+
         // Initialize resource manager
         $this->resourceManager = new ResourceManager();
-        
+
         // Initialize prompt manager
         $this->promptManager = new PromptManager();
-        
+
         // Initialize health monitor
         $this->healthMonitor = new HealthMonitor($this->logger);
-        
+
         // Connect health monitor to underlying server
         $this->server->setHealthMonitor($this->healthMonitor);
-        
+
         // Connect notification manager to managers
         $this->toolManager->setNotificationManager($this->server->getNotificationManager());
         $this->resourceManager->setNotificationManager($this->server->getNotificationManager());
         $this->promptManager->setNotificationManager($this->server->getNotificationManager());
-        
+
         // Set up initialization callback
         $this->server->onInitialized(function () {
             $this->logger->info('Server fully initialized');
-            
+
             // Start health monitoring after initialization
             if ($this->server->isConnected()) {
                 $this->healthMonitor->setTransport($this->server->getTransport());
@@ -140,7 +140,7 @@ class McpServer
             }
         });
     }
-    
+
     /**
      * Get the underlying Server instance.
      *
@@ -150,7 +150,7 @@ class McpServer
     {
         return $this->server;
     }
-    
+
     /**
      * Get the tool manager.
      *
@@ -160,7 +160,7 @@ class McpServer
     {
         return $this->toolManager;
     }
-    
+
     /**
      * Get the resource manager.
      *
@@ -170,7 +170,7 @@ class McpServer
     {
         return $this->resourceManager;
     }
-    
+
     /**
      * Get the prompt manager.
      *
@@ -180,7 +180,7 @@ class McpServer
     {
         return $this->promptManager;
     }
-    
+
     /**
      * Get the logger instance.
      *
@@ -190,7 +190,7 @@ class McpServer
     {
         return $this->logger;
     }
-    
+
     /**
      * Get the health monitor instance.
      *
@@ -200,7 +200,7 @@ class McpServer
     {
         return $this->healthMonitor;
     }
-    
+
     /**
      * Get the cancellation manager instance.
      *
@@ -238,7 +238,7 @@ class McpServer
             );
             return $this->server->handleInitialize($requestObj);
         }
-        
+
         return $this->server->handleInitialize($request);
     }
 
@@ -259,10 +259,10 @@ class McpServer
             );
             return $this->server->handlePing($requestObj);
         }
-        
+
         return $this->server->handlePing($request);
     }
-    
+
     /**
      * Start connection health monitoring.
      *
@@ -272,7 +272,7 @@ class McpServer
     {
         $this->healthMonitor->startMonitoring();
     }
-    
+
     /**
      * Stop connection health monitoring.
      *
@@ -282,7 +282,7 @@ class McpServer
     {
         $this->healthMonitor->stopMonitoring();
     }
-    
+
     /**
      * Check if the connection is healthy.
      *
@@ -292,7 +292,7 @@ class McpServer
     {
         return $this->healthMonitor->isHealthy();
     }
-    
+
     /**
      * Get connection health statistics.
      *
@@ -302,7 +302,7 @@ class McpServer
     {
         return $this->healthMonitor->getStats();
     }
-    
+
     /**
      * Perform a health monitoring tick.
      * This should be called periodically to maintain connection health monitoring.
@@ -313,7 +313,7 @@ class McpServer
     {
         $this->healthMonitor->tick();
     }
-    
+
     /**
      * Cancel a specific request.
      *
@@ -325,7 +325,7 @@ class McpServer
     {
         return $this->getCancellationManager()->cancelRequest($requestId, $reason);
     }
-    
+
     /**
      * Cancel all active requests.
      *
@@ -336,7 +336,7 @@ class McpServer
     {
         return $this->getCancellationManager()->cancelAll($reason);
     }
-    
+
     /**
      * Get the number of active requests.
      *
@@ -346,7 +346,7 @@ class McpServer
     {
         return $this->getCancellationManager()->getActiveRequestCount();
     }
-    
+
     /**
      * Get statistics about active requests and cancellations.
      *
@@ -356,7 +356,7 @@ class McpServer
     {
         return $this->getCancellationManager()->getStats();
     }
-    
+
     /**
      * Attaches to the given transport, starts it, and starts listening for messages.
      *
@@ -370,11 +370,11 @@ class McpServer
     public function connect(TransportInterface $transport): void
     {
         $this->server->connect($transport);
-        
+
         // Set transport for health monitor
         $this->healthMonitor->setTransport($transport);
     }
-    
+
     /**
      * Closes the connection.
      *
@@ -389,14 +389,14 @@ class McpServer
                 'cancelledCount' => $cancelledCount
             ]);
         }
-        
+
         // Stop health monitoring before closing
         $this->healthMonitor->stopMonitoring();
         $this->healthMonitor->setTransport(null);
-        
+
         $this->server->close();
     }
-    
+
     /**
      * Checks if the server is connected to a transport.
      *
@@ -406,7 +406,7 @@ class McpServer
     {
         return $this->server->isConnected();
     }
-    
+
     /**
      * Sends a resource list changed notification to the client, if connected.
      *
@@ -417,10 +417,10 @@ class McpServer
         if (!$this->isConnected()) {
             return;
         }
-        
+
         $this->server->getNotificationManager()->sendResourceListChanged();
     }
-    
+
     /**
      * Send a resource updated notification for a specific resource.
      *
@@ -433,10 +433,10 @@ class McpServer
         if (!$this->isConnected()) {
             return;
         }
-        
+
         $this->server->getNotificationManager()->sendResourceUpdated($uri, $content);
     }
-    
+
     /**
      * Sends a tool list changed notification to the client, if connected.
      *
@@ -447,10 +447,10 @@ class McpServer
         if (!$this->isConnected()) {
             return;
         }
-        
+
         $this->server->getNotificationManager()->sendToolsListChanged();
     }
-    
+
     /**
      * Sends a prompt list changed notification to the client, if connected.
      *
@@ -461,10 +461,10 @@ class McpServer
         if (!$this->isConnected()) {
             return;
         }
-        
+
         $this->server->getNotificationManager()->sendPromptsListChanged();
     }
-    
+
     /**
      * Send a general message notification to the client.
      *
@@ -478,10 +478,10 @@ class McpServer
         if (!$this->isConnected()) {
             return;
         }
-        
+
         $this->server->getNotificationManager()->sendMessage($level, $message, $data);
     }
-    
+
     /**
      * Subscribe to updates for a specific resource.
      *
@@ -493,7 +493,7 @@ class McpServer
     {
         $this->server->getNotificationManager()->subscribeToResource($uri, $options);
     }
-    
+
     /**
      * Unsubscribe from updates for a specific resource.
      *
@@ -504,7 +504,7 @@ class McpServer
     {
         $this->server->getNotificationManager()->unsubscribeFromResource($uri);
     }
-    
+
     /**
      * Get all current resource subscriptions.
      *
@@ -514,7 +514,7 @@ class McpServer
     {
         return $this->server->getNotificationManager()->getResourceSubscriptions();
     }
-    
+
     /**
      * Setup tool request handlers if not already done.
      *
@@ -525,19 +525,19 @@ class McpServer
         if ($this->toolHandlersInitialized) {
             return;
         }
-        
+
         // Register tool capabilities
         $this->server->registerCapabilities(new ServerCapabilities(tools: [
             'listChanged' => true
         ]));
-        
+
         // Register tool handlers
         $this->server->setRequestHandler('tools/list', [$this, 'handleToolsList']);
         $this->server->setRequestHandler('tools/call', [$this, 'handleToolsCall']);
-        
+
         $this->toolHandlersInitialized = true;
     }
-    
+
     /**
      * Setup resource request handlers if not already done.
      *
@@ -548,20 +548,20 @@ class McpServer
         if ($this->resourceHandlersInitialized) {
             return;
         }
-        
+
         // Register resource capabilities
         $this->server->registerCapabilities(new ServerCapabilities(resources: [
             'listChanged' => true
         ]));
-        
+
         // Register resource handlers
         $this->server->setRequestHandler('resources/list', [$this, 'handleResourcesList']);
         $this->server->setRequestHandler('resources/templates/list', [$this, 'handleResourceTemplatesList']);
         $this->server->setRequestHandler('resources/read', [$this, 'handleResourceRead']);
-        
+
         $this->resourceHandlersInitialized = true;
     }
-    
+
     /**
      * Setup prompt request handlers if not already done.
      *
@@ -572,19 +572,19 @@ class McpServer
         if ($this->promptHandlersInitialized) {
             return;
         }
-        
+
         // Register prompt capabilities
         $this->server->registerCapabilities(new ServerCapabilities(prompts: [
             'listChanged' => true
         ]));
-        
+
         // Register prompt handlers
         $this->server->setRequestHandler('prompts/list', [$this, 'handlePromptsList']);
         $this->server->setRequestHandler('prompts/get', [$this, 'handlePromptGet']);
-        
+
         $this->promptHandlersInitialized = true;
     }
-    
+
     /**
      * Handle the tools/list request.
      *
@@ -595,7 +595,7 @@ class McpServer
     {
         return $this->toolManager->list();
     }
-    
+
     /**
      * Handle the tools/call request.
      *
@@ -607,7 +607,7 @@ class McpServer
         try {
             $name = $request->params['name'] ?? null;
             $params = $request->params['params'] ?? [];
-            
+
             if ($name === null) {
                 return ErrorResponseBuilder::createErrorArray(
                     Constants::ERROR_CODE_INVALID_PARAMS,
@@ -615,7 +615,7 @@ class McpServer
                     ['parameter' => 'name']
                 );
             }
-            
+
             if (!$this->toolManager->exists($name)) {
                 return ErrorResponseBuilder::createErrorArray(
                     ErrorResponseBuilder::ERROR_CODE_TOOL_NOT_FOUND,
@@ -623,19 +623,19 @@ class McpServer
                     ['tool' => $name]
                 );
             }
-            
+
             $result = $this->toolManager->execute($name, $params);
-            
+
             // If the result is already a ToolResponse, return its content
             if ($result instanceof ToolResponse) {
                 return $result->toArray();
             }
-            
+
             // If the result is already properly formatted with content, return it directly
             if (is_array($result) && isset($result['content'])) {
                 return $result;
             }
-            
+
             // Otherwise, wrap the result in a text response
             return [
                 'content' => [
@@ -659,7 +659,7 @@ class McpServer
             );
         }
     }
-    
+
     /**
      * Handle the resources/list request.
      *
@@ -671,7 +671,7 @@ class McpServer
         $resources = $this->resourceManager->list();
         return ['resources' => $resources];
     }
-    
+
     /**
      * Handle the resources/templates/list request.
      *
@@ -681,15 +681,15 @@ class McpServer
     public function handleResourceTemplatesList($request): array
     {
         $templates = [];
-        
+
         // Get all resources and filter for dynamic resources with templates
         $allResources = $this->resourceManager->getAll();
-        
+
         foreach ($allResources as $name => $resource) {
             if ($resource instanceof \ModelContextProtocol\Protocol\Resources\DynamicResource) {
                 $template = $resource->getTemplate();
                 $listOptions = $template->getListOptions();
-                
+
                 if ($listOptions !== null) {
                     $templates[] = [
                         'name' => $name,
@@ -699,10 +699,10 @@ class McpServer
                 }
             }
         }
-        
+
         return ['resourceTemplates' => $templates];
     }
-    
+
     /**
      * Handle the resources/read request.
      *
@@ -712,7 +712,7 @@ class McpServer
     public function handleResourceRead($request): array
     {
         $uri = $request->params['uri'] ?? null;
-        
+
         if ($uri === null) {
             return ErrorResponseBuilder::createErrorArray(
                 Constants::ERROR_CODE_INVALID_PARAMS,
@@ -720,10 +720,10 @@ class McpServer
                 ['parameter' => 'uri']
             );
         }
-        
+
         // Resolve the URI to a resource
         $resolved = $this->resourceManager->resolve($uri);
-        
+
         if ($resolved === null) {
             return ErrorResponseBuilder::createErrorArray(
                 ErrorResponseBuilder::ERROR_CODE_RESOURCE_NOT_FOUND,
@@ -731,13 +731,13 @@ class McpServer
                 ['uri' => $uri]
             );
         }
-        
+
         try {
             // Handle the resource request
             $resource = $resolved['resource'];
             $params = $resolved['params'];
             $result = $resource->handle($uri, $params);
-            
+
             // Return the content directly as expected by MCP protocol
             if (isset($result['content'])) {
                 return ['content' => $result['content']];
@@ -745,7 +745,6 @@ class McpServer
                 // If no content array, wrap the whole result
                 return ['content' => [$result]];
             }
-            
         } catch (\Exception $e) {
             return ErrorResponseBuilder::createErrorArray(
                 ErrorResponseBuilder::ERROR_CODE_RESOURCE_ERROR,
@@ -754,7 +753,7 @@ class McpServer
             );
         }
     }
-    
+
     /**
      * Handle the prompts/list request.
      *
@@ -766,7 +765,7 @@ class McpServer
         $prompts = $this->promptManager->list();
         return ['prompts' => $prompts];
     }
-    
+
     /**
      * Handle the prompts/get request.
      *
@@ -777,7 +776,7 @@ class McpServer
     {
         $name = $request->params['name'] ?? null;
         $params = $request->params['params'] ?? [];
-        
+
         if ($name === null) {
             return ErrorResponseBuilder::createErrorArray(
                 Constants::ERROR_CODE_INVALID_PARAMS,
@@ -785,7 +784,7 @@ class McpServer
                 ['parameter' => 'name']
             );
         }
-        
+
         if (!$this->promptManager->exists($name)) {
             return ErrorResponseBuilder::createErrorArray(
                 ErrorResponseBuilder::ERROR_CODE_PROMPT_NOT_FOUND,
@@ -793,7 +792,7 @@ class McpServer
                 ['prompt' => $name]
             );
         }
-        
+
         try {
             $result = $this->promptManager->execute($name, $params);
             return $result;
@@ -811,7 +810,7 @@ class McpServer
             );
         }
     }
-    
+
     /**
      * Handle logging/setLevel request.
      *
@@ -822,7 +821,7 @@ class McpServer
     {
         $params = $request['params'] ?? [];
         $level = $params['level'] ?? null;
-        
+
         // Validate level parameter
         if (!is_string($level) || empty($level)) {
             return ErrorResponseBuilder::createErrorArray(
@@ -830,7 +829,7 @@ class McpServer
                 'Missing or invalid "level" parameter'
             );
         }
-        
+
         // Check if logger supports dynamic level changes
         if (!method_exists($this->logger, 'setLevel')) {
             return ErrorResponseBuilder::createErrorArray(
@@ -838,25 +837,25 @@ class McpServer
                 'Logger does not support dynamic level changes'
             );
         }
-        
+
         // Attempt to set the log level
         $success = $this->logger->setLevel($level);
-        
+
         if (!$success) {
             return ErrorResponseBuilder::createErrorArray(
                 \ModelContextProtocol\Protocol\Constants::ERROR_CODE_INVALID_PARAMS,
-                "Invalid log level: '$level'. Valid levels are: " . 
+                "Invalid log level: '$level'. Valid levels are: " .
                 implode(', ', \ModelContextProtocol\Utilities\Logging\ConsoleLogger::getAvailableLevels())
             );
         }
-        
+
         // Log the level change
         $this->logger->info("Log level changed to: $level");
-        
+
         // Return empty success response
         return [];
     }
-    
+
     /**
      * Register capabilities for resource support.
      *
@@ -870,10 +869,10 @@ class McpServer
             'listChanged' => $listChanged,
             'subscribe' => $subscribe
         ]));
-        
+
         $this->setResourceRequestHandlers();
     }
-    
+
     /**
      * Register capabilities for tool support.
      *
@@ -885,10 +884,10 @@ class McpServer
         $this->server->registerCapabilities(new ServerCapabilities(tools: [
             'listChanged' => $listChanged
         ]));
-        
+
         $this->setToolRequestHandlers();
     }
-    
+
     /**
      * Register capabilities for prompt support.
      *
@@ -900,10 +899,10 @@ class McpServer
         $this->server->registerCapabilities(new ServerCapabilities(prompts: [
             'listChanged' => $listChanged
         ]));
-        
+
         $this->setPromptRequestHandlers();
     }
-    
+
     /**
      * Register capabilities for logging support.
      *
@@ -914,7 +913,7 @@ class McpServer
         $this->server->registerCapabilities(new ServerCapabilities(logging: []));
         $this->setLoggingRequestHandlers();
     }
-    
+
     /**
      * Set up logging request handlers.
      *
@@ -924,7 +923,7 @@ class McpServer
     {
         $this->server->setRequestHandler('logging/setLevel', [$this, 'handleLoggingSetLevel']);
     }
-    
+
     /**
      * Register a new tool.
      *
@@ -937,16 +936,16 @@ class McpServer
     {
         // Ensure tool request handlers are set up
         $this->setToolRequestHandlers();
-        
+
         // Register the tool with the tool manager
         $tool = $this->toolManager->register($name, $schema, $handler);
-        
+
         // Notify clients if connected
         $this->sendToolListChanged();
-        
+
         return $tool;
     }
-    
+
     /**
      * Unregister a tool.
      *
@@ -956,14 +955,14 @@ class McpServer
     public function unregisterTool(string $name): bool
     {
         $result = $this->toolManager->remove($name);
-        
+
         if ($result) {
             $this->sendToolListChanged();
         }
-        
+
         return $result;
     }
-    
+
     /**
      * Register a static resource.
      *
@@ -981,16 +980,16 @@ class McpServer
     ): StaticResource {
         // Ensure resource request handlers are set up
         $this->setResourceRequestHandlers();
-        
+
         // Register the resource with the resource manager
         $resource = $this->resourceManager->registerStatic($name, $uri, $content, $listOptions);
-        
+
         // Notify clients if connected
         $this->sendResourceListChanged();
-        
+
         return $resource;
     }
-    
+
     /**
      * Register a dynamic resource with a template.
      *
@@ -1006,16 +1005,16 @@ class McpServer
     ): DynamicResource {
         // Ensure resource request handlers are set up
         $this->setResourceRequestHandlers();
-        
+
         // Register the resource with the resource manager
         $resource = $this->resourceManager->registerDynamic($name, $template, $handler);
-        
+
         // Notify clients if connected
         $this->sendResourceListChanged();
-        
+
         return $resource;
     }
-    
+
     /**
      * Unregister a resource.
      *
@@ -1028,13 +1027,13 @@ class McpServer
         if ($resource === null) {
             return false;
         }
-        
+
         $this->resourceManager->unregister($name);
         $this->sendResourceListChanged();
-        
+
         return true;
     }
-    
+
     /**
      * Register a new prompt.
      *
@@ -1047,16 +1046,16 @@ class McpServer
     {
         // Ensure prompt request handlers are set up
         $this->setPromptRequestHandlers();
-        
+
         // Register the prompt with the prompt manager
         $prompt = $this->promptManager->register($name, $schema, $handler);
-        
+
         // Notify clients if connected
         $this->sendPromptListChanged();
-        
+
         return $prompt;
     }
-    
+
     /**
      * Unregister a prompt.
      *
@@ -1066,11 +1065,11 @@ class McpServer
     public function unregisterPrompt(string $name): bool
     {
         $result = $this->promptManager->remove($name);
-        
+
         if ($result) {
             $this->sendPromptListChanged();
         }
-        
+
         return $result;
     }
 }

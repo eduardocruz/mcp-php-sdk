@@ -22,7 +22,7 @@ abstract class TestCase extends PHPUnitTestCase
 
     /**
      * Create a mock JSON-RPC response
-     * 
+     *
      * @param mixed $result The result data
      * @param string|null $id The response ID
      * @return Response The created response
@@ -34,7 +34,7 @@ abstract class TestCase extends PHPUnitTestCase
 
     /**
      * Assert that a response has the expected structure
-     * 
+     *
      * @param mixed $response The response to validate
      * @param string|null $expectedId The expected ID
      * @return void
@@ -42,11 +42,11 @@ abstract class TestCase extends PHPUnitTestCase
     protected function assertValidJsonRpcResponse(mixed $response, ?string $expectedId = null): void
     {
         $this->assertInstanceOf(Response::class, $response);
-        
+
         if ($expectedId !== null) {
             $this->assertEquals($expectedId, $response->id);
         }
-        
+
         $this->assertNotNull($response->id);
     }
 
@@ -58,11 +58,11 @@ abstract class TestCase extends PHPUnitTestCase
         $this->assertArrayHasKey('error', $errorResponse);
         $this->assertArrayHasKey('code', $errorResponse['error']);
         $this->assertArrayHasKey('message', $errorResponse['error']);
-        
+
         if ($expectedCode !== null) {
             $this->assertEquals($expectedCode, $errorResponse['error']['code']);
         }
-        
+
         $this->assertIsInt($errorResponse['error']['code']);
         $this->assertIsString($errorResponse['error']['message']);
     }
@@ -74,7 +74,7 @@ abstract class TestCase extends PHPUnitTestCase
     {
         $this->assertArrayHasKey('content', $response);
         $this->assertIsArray($response['content']);
-        
+
         foreach ($response['content'] as $content) {
             $this->assertArrayHasKey('type', $content);
             $this->assertIsString($content['type']);
@@ -88,7 +88,7 @@ abstract class TestCase extends PHPUnitTestCase
     {
         $this->assertArrayHasKey('content', $response);
         $this->assertIsArray($response['content']);
-        
+
         foreach ($response['content'] as $content) {
             $this->assertArrayHasKey('type', $content);
             $this->assertIsString($content['type']);
@@ -102,7 +102,7 @@ abstract class TestCase extends PHPUnitTestCase
     {
         $this->assertArrayHasKey('messages', $response);
         $this->assertIsArray($response['messages']);
-        
+
         foreach ($response['messages'] as $message) {
             $this->assertArrayHasKey('role', $message);
             $this->assertArrayHasKey('content', $message);
@@ -134,13 +134,13 @@ abstract class TestCase extends PHPUnitTestCase
                 }
             }
         }
-        
+
         parent::tearDown();
     }
 
     /**
      * Get reflection property value (for testing private/protected properties)
-     * 
+     *
      * @param object $object The object to get property from
      * @param string $propertyName The property name
      * @return mixed The property value
@@ -155,7 +155,7 @@ abstract class TestCase extends PHPUnitTestCase
 
     /**
      * Set reflection property value (for testing private/protected properties)
-     * 
+     *
      * @param object $object The object to set property on
      * @param string $propertyName The property name
      * @param mixed $value The value to set
@@ -171,7 +171,7 @@ abstract class TestCase extends PHPUnitTestCase
 
     /**
      * Call private/protected method for testing
-     * 
+     *
      * @param object $object The object to call method on
      * @param string $methodName The method name
      * @param array<mixed> $args The method arguments
@@ -184,4 +184,4 @@ abstract class TestCase extends PHPUnitTestCase
         $method->setAccessible(true);
         return $method->invokeArgs($object, $args);
     }
-} 
+}

@@ -75,7 +75,7 @@ class UriTemplate
                     $parts[] = $currentText;
                     $currentText = "";
                 }
-                
+
                 $end = strpos($template, "}", $i);
                 if ($end === false) {
                     throw new \InvalidArgumentException("Unclosed template expression");
@@ -105,7 +105,7 @@ class UriTemplate
                     'names' => $names,
                     'exploded' => $exploded
                 ];
-                
+
                 $i = $end + 1;
             } else {
                 $currentText .= $template[$i];
@@ -141,7 +141,7 @@ class UriTemplate
     {
         $operator = $this->getOperator($expr);
         $names = explode(',', substr($expr, strlen($operator)));
-        
+
         return array_filter(array_map(function ($name) {
             return trim(str_replace('*', '', $name));
         }, $names), function ($name) {
@@ -155,17 +155,17 @@ class UriTemplate
     private function encodeValue(string $value, string $operator): string
     {
         $this->validateLength($value, self::MAX_VARIABLE_LENGTH, "Variable value");
-        
+
         if ($operator === '+' || $operator === '#') {
             return rawurlencode($value);
         }
-        
+
         return urlencode($value);
     }
 
     /**
      * Expand a part of the template
-     * 
+     *
      * @param array $part The template part
      * @param array $variables The variables to use
      * @return string The expanded part
@@ -178,21 +178,21 @@ class UriTemplate
                 if (!isset($variables[$name])) {
                     continue;
                 }
-                
+
                 $value = $variables[$name];
                 if (is_array($value)) {
                     $encoded = implode(',', array_map(fn($v) => $this->encodeValue($v, $part['operator']), $value));
                 } else {
                     $encoded = $this->encodeValue((string)$value, $part['operator']);
                 }
-                
+
                 $pairs[] = "$name=$encoded";
             }
 
             if (empty($pairs)) {
                 return "";
             }
-            
+
             $separator = $part['operator'] === '?' ? '?' : '&';
             return $separator . implode('&', $pairs);
         }
@@ -209,11 +209,11 @@ class UriTemplate
                     }
                 }
             }
-            
+
             if (empty($values)) {
                 return "";
             }
-            
+
             return implode(',', $values);
         }
 
@@ -244,7 +244,7 @@ class UriTemplate
 
     /**
      * Expand the template with the given variables
-     * 
+     *
      * @param array $variables The variables to use for expansion
      * @return string The expanded URI
      */
@@ -338,7 +338,7 @@ class UriTemplate
 
     /**
      * Match a URI against this template
-     * 
+     *
      * @param string $uri The URI to match
      * @return array|null The extracted variables or null if no match
      */
@@ -365,7 +365,7 @@ class UriTemplate
 
         $pattern .= '$';
         $this->validateLength($pattern, self::MAX_REGEX_LENGTH, "Generated regex pattern");
-        
+
         if (!preg_match('#' . $pattern . '#', $uri, $matches)) {
             return null;
         }
@@ -375,7 +375,7 @@ class UriTemplate
             $name = $names[$i]['name'];
             $exploded = $names[$i]['exploded'];
             $value = $matches[$i + 1];
-            
+
             // Ensure name is a string before processing
             $nameStr = is_array($name) ? (is_array($name) && isset($name[0]) ? (string)$name[0] : '') : (string)$name;
             $cleanName = str_replace('*', '', $nameStr);

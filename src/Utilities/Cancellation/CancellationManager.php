@@ -14,22 +14,22 @@ class CancellationManager
      * @var LoggerInterface The logger instance
      */
     private LoggerInterface $logger;
-    
+
     /**
      * @var array<string, CancellationToken> Active requests by request ID
      */
     private array $activeRequests = [];
-    
+
     /**
      * @var array<string, array> Request metadata by request ID
      */
     private array $requestMetadata = [];
-    
+
     /**
      * @var callable|null Global cancellation callback
      */
     private $globalCancellationCallback = null;
-    
+
     /**
      * Constructor.
      *
@@ -39,7 +39,7 @@ class CancellationManager
     {
         $this->logger = $logger ?? new ConsoleLogger();
     }
-    
+
     /**
      * Register a new request with a cancellation token.
      *
@@ -50,21 +50,21 @@ class CancellationManager
     public function registerRequest(string $requestId, array $metadata = []): CancellationToken
     {
         $token = new CancellationToken();
-        
+
         $this->activeRequests[$requestId] = $token;
         $this->requestMetadata[$requestId] = array_merge($metadata, [
             'registeredAt' => microtime(true),
             'requestId' => $requestId
         ]);
-        
+
         $this->logger->debug('Request registered for cancellation tracking', [
             'requestId' => $requestId,
             'metadata' => $metadata
         ]);
-        
+
         return $token;
     }
-    
+
     /**
      * Unregister a request (call when request completes normally).
      *
@@ -76,17 +76,17 @@ class CancellationManager
         if (!isset($this->activeRequests[$requestId])) {
             return false;
         }
-        
+
         unset($this->activeRequests[$requestId]);
         unset($this->requestMetadata[$requestId]);
-        
+
         $this->logger->debug('Request unregistered from cancellation tracking', [
             'requestId' => $requestId
         ]);
-        
+
         return true;
     }
-    
+
     /**
      * Cancel a specific request.
      *
@@ -103,19 +103,19 @@ class CancellationManager
             ]);
             return false;
         }
-        
+
         $token = $this->activeRequests[$requestId];
         $metadata = $this->requestMetadata[$requestId] ?? [];
-        
+
         $this->logger->info('Request cancelled', [
             'requestId' => $requestId,
             'reason' => $reason,
             'metadata' => $metadata
         ]);
-        
+
         // Cancel the token
         $token->cancel($reason);
-        
+
         // Execute global cancellation callback if set
         if ($this->globalCancellationCallback !== null) {
             try {
@@ -127,14 +127,14 @@ class CancellationManager
                 ]);
             }
         }
-        
+
         // Remove from active requests
         unset($this->activeRequests[$requestId]);
         unset($this->requestMetadata[$requestId]);
-        
+
         return true;
     }
-    
+
     /**
      * Get the cancellation token for a request.
      *
@@ -145,7 +145,7 @@ class CancellationManager
     {
         return $this->activeRequests[$requestId] ?? null;
     }
-    
+
     /**
      * Check if a request is being tracked.
      *
@@ -156,7 +156,7 @@ class CancellationManager
     {
         return isset($this->activeRequests[$requestId]);
     }
-    
+
     /**
      * Get all active request IDs.
      *
@@ -166,7 +166,7 @@ class CancellationManager
     {
         return array_keys($this->activeRequests);
     }
-    
+
     /**
      * Get the number of active requests.
      *
@@ -176,7 +176,7 @@ class CancellationManager
     {
         return count($this->activeRequests);
     }
-    
+
     /**
      * Get metadata for a request.
      *
@@ -187,7 +187,7 @@ class CancellationManager
     {
         return $this->requestMetadata[$requestId] ?? null;
     }
-    
+
     /**
      * Cancel all active requests.
      *
@@ -198,21 +198,21 @@ class CancellationManager
     {
         $requestIds = $this->getActiveRequestIds();
         $cancelledCount = 0;
-        
+
         foreach ($requestIds as $requestId) {
             if ($this->cancelRequest($requestId, $reason)) {
                 $cancelledCount++;
             }
         }
-        
+
         $this->logger->info('All active requests cancelled', [
             'cancelledCount' => $cancelledCount,
             'reason' => $reason
         ]);
-        
+
         return $cancelledCount;
     }
-    
+
     /**
      * Set a global callback to be executed when any request is cancelled.
      *
@@ -223,7 +223,7 @@ class CancellationManager
     {
         $this->globalCancellationCallback = $callback;
     }
-    
+
     /**
      * Clean up old completed requests (for memory management).
      * This is useful if requests are not properly unregistered.
@@ -235,26 +235,26 @@ class CancellationManager
     {
         $now = microtime(true);
         $cleanedUp = 0;
-        
+
         foreach ($this->requestMetadata as $requestId => $metadata) {
             $age = $now - ($metadata['registeredAt'] ?? $now);
-            
+
             if ($age > $maxAge) {
                 $this->unregisterRequest($requestId);
                 $cleanedUp++;
             }
         }
-        
+
         if ($cleanedUp > 0) {
             $this->logger->info('Cleaned up old requests', [
                 'cleanedUpCount' => $cleanedUp,
                 'maxAge' => $maxAge
             ]);
         }
-        
+
         return $cleanedUp;
     }
-    
+
     /**
      * Get statistics about the cancellation manager.
      *
@@ -264,11 +264,11 @@ class CancellationManager
     {
         $now = microtime(true);
         $ages = [];
-        
+
         foreach ($this->requestMetadata as $metadata) {
             $ages[] = $now - ($metadata['registeredAt'] ?? $now);
         }
-        
+
         return [
             'activeRequestCount' => count($this->activeRequests),
             'oldestRequestAge' => empty($ages) ? null : max($ages),
@@ -276,4 +276,4 @@ class CancellationManager
             'requestIds' => array_keys($this->activeRequests)
         ];
     }
-} 
+}

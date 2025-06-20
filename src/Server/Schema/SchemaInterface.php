@@ -11,12 +11,12 @@ interface SchemaInterface
      * Get the schema properties
      */
     public function getProperties(): array;
-    
+
     /**
      * Get the required properties
      */
     public function getRequired(): array;
-    
+
     /**
      * Get the schema description
      */

@@ -8,7 +8,7 @@ namespace ModelContextProtocol\Server\Tools;
 class ToolResponse
 {
     private array $content;
-    
+
     /**
      * Create a new tool response
      */
@@ -16,7 +16,7 @@ class ToolResponse
     {
         $this->content = $content;
     }
-    
+
     /**
      * Create a text response
      */
@@ -31,7 +31,7 @@ class ToolResponse
             ]
         ]);
     }
-    
+
     /**
      * Create a JSON response
      */
@@ -46,7 +46,7 @@ class ToolResponse
             ]
         ]);
     }
-    
+
     /**
      * Create an error response
      */
@@ -57,14 +57,14 @@ class ToolResponse
                 'message' => $message
             ]
         ];
-        
+
         if ($code !== null) {
             $response['error']['code'] = $code;
         }
-        
+
         return new self($response);
     }
-    
+
     /**
      * Get the response content
      */
@@ -72,7 +72,7 @@ class ToolResponse
     {
         return $this->content;
     }
-    
+
     /**
      * Convert to array
      */
