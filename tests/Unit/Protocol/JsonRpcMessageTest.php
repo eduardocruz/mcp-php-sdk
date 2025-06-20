@@ -61,7 +61,7 @@ class JsonRpcMessageTest extends TestCase
         $this->assertEquals('2.0', $notification->jsonrpc);
         $this->assertEquals('test/notification', $notification->method);
         $this->assertEquals(['data' => 'value'], $notification->params);
-        $this->assertObjectNotHasProperty('id', $notification);
+        $this->assertFalse(property_exists($notification, 'id'));
     }
 
     public function testNotificationSerialization(): void
