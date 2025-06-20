@@ -92,7 +92,7 @@ class ToolManager
      * @param string $name The tool to execute
      * @param array $params The parameters for the tool
      * @return mixed The result of the tool execution
-     * @throws \Exception If the tool is not found
+     * @throws \InvalidArgumentException If the tool is not found
      * @throws ValidationException If the parameters are invalid
      */
     public function execute(string $name, array $params): mixed
@@ -100,11 +100,15 @@ class ToolManager
         $tool = $this->getTool($name);
         
         if ($tool === null) {
-            throw new \Exception("Tool not found: $name");
+            throw new \InvalidArgumentException("Tool not found: $name");
         }
         
         // Validate parameters against schema
-        $this->validator->validate($params, $tool->getSchema());
+        try {
+            $this->validator->validate($params, $tool->getSchema());
+        } catch (ValidationException $e) {
+            throw new \InvalidArgumentException("Schema validation failed");
+        }
         
         // Execute tool
         return $tool->execute($params);
@@ -123,7 +127,7 @@ class ToolManager
             $result[] = $tool->getMetadata();
         }
         
-        return $result;
+        return ['tools' => $result];
     }
     
     /**
@@ -159,5 +163,37 @@ class ToolManager
         }
         
         return false;
+    }
+
+    /**
+     * Check if a tool exists (alias for exists())
+     */
+    public function has(string $name): bool
+    {
+        return $this->exists($name);
+    }
+
+    /**
+     * Unregister a tool (alias for remove())
+     */
+    public function unregister(string $name): bool
+    {
+        return $this->remove($name);
+    }
+
+    /**
+     * Get a tool by name (alias for getTool())
+     */
+    public function get(string $name): ?Tool
+    {
+        return $this->getTool($name);
+    }
+
+    /**
+     * Get all tools
+     */
+    public function getAll(): array
+    {
+        return $this->tools;
     }
 }

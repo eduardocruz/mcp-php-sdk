@@ -217,6 +217,58 @@ class McpServer
     {
         return $this->server->getCancellationManager();
     }
+
+    /**
+     * Get the notification manager instance.
+     *
+     * @return \ModelContextProtocol\Protocol\Notifications\NotificationManager The notification manager instance
+     */
+    public function getNotificationManager(): \ModelContextProtocol\Protocol\Notifications\NotificationManager
+    {
+        return $this->server->getNotificationManager();
+    }
+
+    /**
+     * Handle initialize request (delegate to underlying server).
+     *
+     * @param mixed $request The initialize request
+     * @return array<string, mixed> The initialization result
+     */
+    public function handleInitialize($request): array
+    {
+        // Convert stdClass to Request object if needed
+        if (is_object($request) && !($request instanceof \ModelContextProtocol\Protocol\Messages\Request)) {
+            $requestObj = new \ModelContextProtocol\Protocol\Messages\Request(
+                $request->id ?? 'test-id',
+                $request->method ?? 'initialize',
+                (array)($request->params ?? [])
+            );
+            return $this->server->handleInitialize($requestObj);
+        }
+        
+        return $this->server->handleInitialize($request);
+    }
+
+    /**
+     * Handle ping request (delegate to underlying server).
+     *
+     * @param mixed $request The ping request
+     * @return array<string, mixed> The ping response
+     */
+    public function handlePing($request): array
+    {
+        // Convert stdClass to Request object if needed
+        if (is_object($request) && !($request instanceof \ModelContextProtocol\Protocol\Messages\Request)) {
+            $requestObj = new \ModelContextProtocol\Protocol\Messages\Request(
+                $request->id ?? 'test-id',
+                $request->method ?? 'ping',
+                (array)($request->params ?? [])
+            );
+            return $this->server->handlePing($requestObj);
+        }
+        
+        return $this->server->handlePing($request);
+    }
     
     /**
      * Start connection health monitoring.
@@ -548,8 +600,7 @@ class McpServer
      */
     public function handleToolsList($request): array
     {
-        $tools = $this->toolManager->list();
-        return ['tools' => $tools];
+        return $this->toolManager->list();
     }
     
     /**
@@ -585,6 +636,11 @@ class McpServer
             // If the result is already a ToolResponse, return its content
             if ($result instanceof ToolResponse) {
                 return $result->toArray();
+            }
+            
+            // If the result is already properly formatted with content, return it directly
+            if (is_array($result) && isset($result['content'])) {
+                return $result;
             }
             
             // Otherwise, wrap the result in a text response
