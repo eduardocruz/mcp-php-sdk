@@ -19,6 +19,7 @@ use ModelContextProtocol\Protocol\Resources\DynamicResource;
 use ModelContextProtocol\Server\Prompts\PromptManager;
 use ModelContextProtocol\Server\Prompts\Prompt;
 use ModelContextProtocol\Server\Prompts\Schema\PromptSchema;
+use ModelContextProtocol\Protocol\Errors\ErrorResponseBuilder;
 
 /**
  * High-level MCP server that provides a simpler API for working with resources, tools, and prompts.
@@ -405,21 +406,19 @@ class McpServer
             $params = $request->params['params'] ?? [];
             
             if ($name === null) {
-                return [
-                    'error' => [
-                        'message' => 'Missing tool name',
-                        'code' => 'MISSING_TOOL_NAME'
-                    ]
-                ];
+                return ErrorResponseBuilder::createErrorArray(
+                    ErrorResponseBuilder::ERROR_CODE_INVALID_PARAMS,
+                    'Missing tool name',
+                    ['parameter' => 'name']
+                );
             }
             
             if (!$this->toolManager->exists($name)) {
-                return [
-                    'error' => [
-                        'message' => "Tool not found: $name",
-                        'code' => 'TOOL_NOT_FOUND'
-                    ]
-                ];
+                return ErrorResponseBuilder::createErrorArray(
+                    ErrorResponseBuilder::ERROR_CODE_TOOL_NOT_FOUND,
+                    "Tool not found: {$name}",
+                    ['tool' => $name]
+                );
             }
             
             $result = $this->toolManager->execute($name, $params);
@@ -439,20 +438,17 @@ class McpServer
                 ]
             ];
         } catch (\ModelContextProtocol\Server\Tools\Schema\ValidationException $e) {
-            return [
-                'error' => [
-                    'message' => 'Parameter validation failed',
-                    'code' => 'VALIDATION_ERROR',
-                    'details' => $e->getErrors()
-                ]
-            ];
+            return ErrorResponseBuilder::createErrorArray(
+                ErrorResponseBuilder::ERROR_CODE_VALIDATION_ERROR,
+                'Parameter validation failed',
+                ['errors' => $e->getErrors()]
+            );
         } catch (\Exception $e) {
-            return [
-                'error' => [
-                    'message' => $e->getMessage(),
-                    'code' => 'EXECUTION_ERROR'
-                ]
-            ];
+            return ErrorResponseBuilder::createErrorArray(
+                ErrorResponseBuilder::ERROR_CODE_TOOL_EXECUTION_ERROR,
+                "Tool execution failed: {$e->getMessage()}",
+                ['tool' => $name, 'error' => $e->getMessage()]
+            );
         }
     }
     
@@ -504,24 +500,22 @@ class McpServer
         $uri = $request->params['uri'] ?? null;
         
         if ($uri === null) {
-            return [
-                'error' => [
-                    'code' => 'INVALID_REQUEST',
-                    'message' => 'Missing required parameter: uri'
-                ]
-            ];
+            return ErrorResponseBuilder::createErrorArray(
+                ErrorResponseBuilder::ERROR_CODE_INVALID_PARAMS,
+                'Missing required parameter: uri',
+                ['parameter' => 'uri']
+            );
         }
         
         // Resolve the URI to a resource
         $resolved = $this->resourceManager->resolve($uri);
         
         if ($resolved === null) {
-            return [
-                'error' => [
-                    'code' => 'RESOURCE_NOT_FOUND',
-                    'message' => "Resource not found for URI: {$uri}"
-                ]
-            ];
+            return ErrorResponseBuilder::createErrorArray(
+                ErrorResponseBuilder::ERROR_CODE_RESOURCE_NOT_FOUND,
+                "Resource not found for URI: {$uri}",
+                ['uri' => $uri]
+            );
         }
         
         try {
@@ -568,12 +562,11 @@ class McpServer
             return ['contents' => $contents];
             
         } catch (\Exception $e) {
-            return [
-                'error' => [
-                    'code' => 'RESOURCE_ERROR',
-                    'message' => "Error reading resource: {$e->getMessage()}"
-                ]
-            ];
+            return ErrorResponseBuilder::createErrorArray(
+                ErrorResponseBuilder::ERROR_CODE_RESOURCE_ERROR,
+                "Error reading resource: {$e->getMessage()}",
+                ['uri' => $uri, 'error' => $e->getMessage()]
+            );
         }
     }
     
@@ -601,41 +594,36 @@ class McpServer
         $params = $request->params['params'] ?? [];
         
         if ($name === null) {
-            return [
-                'error' => [
-                    'code' => 'INVALID_REQUEST',
-                    'message' => 'Missing required parameter: name'
-                ]
-            ];
+            return ErrorResponseBuilder::createErrorArray(
+                ErrorResponseBuilder::ERROR_CODE_INVALID_PARAMS,
+                'Missing required parameter: name',
+                ['parameter' => 'name']
+            );
         }
         
         if (!$this->promptManager->exists($name)) {
-            return [
-                'error' => [
-                    'code' => 'PROMPT_NOT_FOUND',
-                    'message' => "Prompt not found: {$name}"
-                ]
-            ];
+            return ErrorResponseBuilder::createErrorArray(
+                ErrorResponseBuilder::ERROR_CODE_PROMPT_NOT_FOUND,
+                "Prompt not found: {$name}",
+                ['prompt' => $name]
+            );
         }
         
         try {
             $result = $this->promptManager->execute($name, $params);
             return $result;
         } catch (\ModelContextProtocol\Server\Tools\Schema\ValidationException $e) {
-            return [
-                'error' => [
-                    'code' => 'VALIDATION_ERROR',
-                    'message' => 'Parameter validation failed',
-                    'details' => $e->getErrors()
-                ]
-            ];
+            return ErrorResponseBuilder::createErrorArray(
+                ErrorResponseBuilder::ERROR_CODE_VALIDATION_ERROR,
+                'Parameter validation failed',
+                ['errors' => $e->getErrors()]
+            );
         } catch (\Exception $e) {
-            return [
-                'error' => [
-                    'code' => 'PROMPT_ERROR',
-                    'message' => "Error executing prompt: {$e->getMessage()}"
-                ]
-            ];
+            return ErrorResponseBuilder::createErrorArray(
+                ErrorResponseBuilder::ERROR_CODE_PROMPT_ERROR,
+                "Error executing prompt: {$e->getMessage()}",
+                ['prompt' => $name, 'error' => $e->getMessage()]
+            );
         }
     }
     

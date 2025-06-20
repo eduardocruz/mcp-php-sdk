@@ -8,6 +8,7 @@ use ModelContextProtocol\Protocol\Messages\Request;
 use ModelContextProtocol\Protocol\Messages\Response;
 use ModelContextProtocol\Protocol\Messages\Notification;
 use ModelContextProtocol\Protocol\Messages\ErrorData;
+use ModelContextProtocol\Protocol\Errors\ErrorResponseBuilder;
 use ModelContextProtocol\Protocol\Models\ClientCapabilities;
 use ModelContextProtocol\Protocol\Models\Implementation;
 use ModelContextProtocol\Protocol\Models\InitializeParams;
@@ -247,7 +248,12 @@ class Server
         ]);
         
         if (!$this->initialized && $method !== 'initialize') {
-            $this->sendErrorResponse($request, Constants::ERROR_CODE_INVALID_REQUEST, 'Server not initialized');
+            $response = ErrorResponseBuilder::createErrorResponse(
+                $request,
+                Constants::ERROR_CODE_INVALID_REQUEST,
+                'Server not initialized'
+            );
+            $this->sendRawResponse($response);
             return;
         }
         
@@ -261,11 +267,12 @@ class Server
                 } elseif ($result instanceof Response) {
                     $this->sendRawResponse($result);
                 } else {
-                    $this->sendErrorResponse(
+                    $response = ErrorResponseBuilder::createErrorResponse(
                         $request,
                         Constants::ERROR_CODE_INTERNAL_ERROR,
                         'Handler returned invalid result'
                     );
+                    $this->sendRawResponse($response);
                 }
             } catch (Throwable $e) {
                 $this->logger->error('Error in request handler', [
@@ -274,15 +281,17 @@ class Server
                     'exception' => get_class($e)
                 ]);
                 
-                $this->sendErrorResponse(
-                    $request,
-                    Constants::ERROR_CODE_INTERNAL_ERROR,
-                    'Internal server error: ' . $e->getMessage()
-                );
+                $response = ErrorResponseBuilder::fromException($request, $e);
+                $this->sendRawResponse($response);
             }
         } else {
             $this->logger->warning('Method not found', ['method' => $method]);
-            $this->sendErrorResponse($request, Constants::ERROR_CODE_METHOD_NOT_FOUND, 'Method not found');
+            $response = ErrorResponseBuilder::createErrorResponse(
+                $request,
+                Constants::ERROR_CODE_METHOD_NOT_FOUND,
+                'Method not found'
+            );
+            $this->sendRawResponse($response);
         }
     }
     
