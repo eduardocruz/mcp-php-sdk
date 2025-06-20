@@ -103,22 +103,33 @@ class ResourceManager
     }
 
     /**
-     * List all listable resources
+     * Get all registered resources
+     */
+    public function getAll(): array
+    {
+        return $this->resources;
+    }
+
+    /**
+     * List all listable static resources (not templates)
      */
     public function list(): array
     {
         $result = [];
         
         foreach ($this->resources as $name => $resource) {
-            $template = $resource->getTemplate();
-            $listOptions = $template->getListOptions();
-            
-            if ($listOptions !== null) {
-                $result[] = [
-                    'name' => $name,
-                    'template' => (string)$template,
-                    'listOptions' => $listOptions
-                ];
+            // Only include static resources in the main list
+            if ($resource instanceof StaticResource) {
+                $template = $resource->getTemplate();
+                $listOptions = $template->getListOptions();
+                
+                if ($listOptions !== null) {
+                    $result[] = [
+                        'name' => $name,
+                        'uri' => (string)$template,
+                        'description' => $listOptions['description'] ?? ''
+                    ];
+                }
             }
         }
         

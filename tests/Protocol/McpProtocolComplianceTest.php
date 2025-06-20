@@ -247,8 +247,10 @@ class McpProtocolComplianceTest extends TestCase
                         [
                             'role' => 'user',
                             'content' => [
-                                'type' => 'text',
-                                'text' => "Tell me about {$params['topic']}"
+                                [
+                                    'type' => 'text',
+                                    'text' => "Tell me about {$params['topic']}"
+                                ]
                             ]
                         ]
                     ]
@@ -290,7 +292,8 @@ class McpProtocolComplianceTest extends TestCase
                 'properties' => [
                     'name' => ['type' => 'string']
                 ],
-                'required' => ['name']
+                'required' => ['name'],
+                'description' => 'A greeting prompt'
             ],
             function(array $params) {
                 return [
@@ -298,15 +301,19 @@ class McpProtocolComplianceTest extends TestCase
                         [
                             'role' => 'system',
                             'content' => [
-                                'type' => 'text',
-                                'text' => 'You are a helpful assistant.'
+                                [
+                                    'type' => 'text',
+                                    'text' => 'You are a helpful assistant.'
+                                ]
                             ]
                         ],
                         [
                             'role' => 'user',
                             'content' => [
-                                'type' => 'text',
-                                'text' => "Say hello to {$params['name']}"
+                                [
+                                    'type' => 'text',
+                                    'text' => "Say hello to {$params['name']}"
+                                ]
                             ]
                         ]
                     ]
@@ -323,6 +330,8 @@ class McpProtocolComplianceTest extends TestCase
         ];
 
         $response = $this->server->handlePromptGet($request);
+
+
 
         // Validate response structure according to MCP spec
         $this->assertArrayHasKey('messages', $response);

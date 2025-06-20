@@ -687,17 +687,23 @@ class McpServer
      */
     public function handleResourceTemplatesList($request): array
     {
-        // Get all resources and filter for templates
-        $resources = $this->resourceManager->list();
         $templates = [];
         
-        foreach ($resources as $resource) {
-            if (isset($resource['template'])) {
-                $templates[] = [
-                    'name' => $resource['name'],
-                    'template' => $resource['template'],
-                    'listOptions' => $resource['listOptions'] ?? null
-                ];
+        // Get all resources and filter for dynamic resources with templates
+        $allResources = $this->resourceManager->getAll();
+        
+        foreach ($allResources as $name => $resource) {
+            if ($resource instanceof \ModelContextProtocol\Protocol\Resources\DynamicResource) {
+                $template = $resource->getTemplate();
+                $listOptions = $template->getListOptions();
+                
+                if ($listOptions !== null) {
+                    $templates[] = [
+                        'name' => $name,
+                        'template' => (string)$template,
+                        'listOptions' => $listOptions
+                    ];
+                }
             }
         }
         
@@ -739,42 +745,13 @@ class McpServer
             $params = $resolved['params'];
             $result = $resource->handle($uri, $params);
             
-            // Format the response according to MCP spec
-            $contents = [];
+            // Return the content directly as expected by MCP protocol
             if (isset($result['content'])) {
-                foreach ($result['content'] as $item) {
-                    $content = [
-                        'uri' => $uri
-                    ];
-                    
-                    // Add content based on type
-                    if (isset($item['type']) && isset($item['text'])) {
-                        $content['mimeType'] = $item['type'];
-                        $content['text'] = $item['text'];
-                    } elseif (isset($item['type']) && isset($item['data'])) {
-                        $content['mimeType'] = $item['type'];
-                        $content['blob'] = $item['data'];
-                    } elseif (isset($item['text'])) {
-                        $content['mimeType'] = 'text/plain';
-                        $content['text'] = $item['text'];
-                    } else {
-                        // Default to JSON for complex data
-                        $content['mimeType'] = 'application/json';
-                        $content['text'] = json_encode($item);
-                    }
-                    
-                    $contents[] = $content;
-                }
+                return ['content' => $result['content']];
             } else {
-                // If no content array, treat the whole result as content
-                $contents[] = [
-                    'uri' => $uri,
-                    'mimeType' => 'application/json',
-                    'text' => json_encode($result)
-                ];
+                // If no content array, wrap the whole result
+                return ['content' => [$result]];
             }
-            
-            return ['contents' => $contents];
             
         } catch (\Exception $e) {
             return ErrorResponseBuilder::createErrorArray(

@@ -32,7 +32,7 @@ class InitializeResult
         $result = [
             'protocolVersion' => $this->protocolVersion,
             'capabilities' => $this->capabilities->toArray(),
-            'server' => $this->serverInfo->toArray(),
+            'serverInfo' => $this->serverInfo->toArray(),
         ];
         
         if ($this->instructions !== null) {

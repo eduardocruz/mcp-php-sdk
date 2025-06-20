@@ -92,7 +92,7 @@ class PromptManager
      * @param string $name The prompt to execute
      * @param array $params The parameters for the prompt
      * @return array The result of the prompt execution
-     * @throws \Exception If the prompt is not found
+     * @throws \InvalidArgumentException If the prompt is not found
      * @throws ValidationException If the parameters are invalid
      */
     public function execute(string $name, array $params): array
@@ -100,11 +100,15 @@ class PromptManager
         $prompt = $this->getPrompt($name);
         
         if ($prompt === null) {
-            throw new \Exception("Prompt not found: $name");
+            throw new \InvalidArgumentException("Prompt not found: $name");
         }
         
         // Validate parameters against schema
-        $this->validator->validate($params, $prompt->getSchema());
+        try {
+            $this->validator->validate($params, $prompt->getSchema());
+        } catch (ValidationException $e) {
+            throw new \InvalidArgumentException("Schema validation failed");
+        }
         
         // Execute prompt
         return $prompt->execute($params);

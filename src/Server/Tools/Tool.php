@@ -59,9 +59,16 @@ class Tool
      */
     public function getMetadata(): array
     {
+        $schemaArray = $this->schema->toArray();
+        
         return [
             'name' => $this->name,
-            'schema' => $this->schema->toArray()
+            'description' => $this->schema->getDescription() ?? '',
+            'inputSchema' => [
+                'type' => 'object',
+                'properties' => $schemaArray['properties'] ?? [],
+                'required' => $schemaArray['required'] ?? []
+            ]
         ];
     }
 }

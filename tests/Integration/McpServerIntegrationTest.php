@@ -76,7 +76,8 @@ class McpServerIntegrationTest extends TestCase
         $staticResource = $this->server->registerResource(
             'greeting',
             'greeting://hello',
-            [['type' => 'text', 'text' => 'Hello, World!']]
+            [['type' => 'text', 'text' => 'Hello, World!']],
+            ['description' => 'A greeting resource']
         );
 
         // Register dynamic resource
@@ -131,7 +132,7 @@ class McpServerIntegrationTest extends TestCase
         
         $readDynamicResponse = $this->server->handleResourceRead($readDynamicRequest);
         $this->assertValidResourceResponse($readDynamicResponse);
-        $this->assertStringContains('123', $readDynamicResponse['content'][0]['text']);
+        $this->assertStringContainsString('123', $readDynamicResponse['content'][0]['text']);
     }
 
     public function testCompletePromptWorkflow(): void
@@ -261,12 +262,11 @@ class McpServerIntegrationTest extends TestCase
 
     public function testNotificationIntegration(): void
     {
-        // Register tool and capture notifications
-        $notifications = [];
+        // Register tool and verify notification manager integration
         $notificationManager = $this->server->getNotificationManager();
         
-        // Mock notification sending (in real implementation, this would go through transport)
-        $this->setPropertyValue($notificationManager, 'subscribers', ['tools/list_changed' => true]);
+        // Verify notification manager is accessible
+        $this->assertInstanceOf(\ModelContextProtocol\Protocol\Notifications\NotificationManager::class, $notificationManager);
 
         $this->server->registerTool(
             'test-tool',
@@ -276,6 +276,7 @@ class McpServerIntegrationTest extends TestCase
 
         // In a real scenario, notifications would be sent through the transport
         // Here we just verify the notification manager is properly integrated
-        $this->assertTrue($notificationManager->hasSubscribers('tools/list_changed'));
+        // The queue should have 1 notification from the tool registration
+        $this->assertEquals(1, $notificationManager->getQueueSize());
     }
 } 
