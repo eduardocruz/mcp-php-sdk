@@ -15,7 +15,7 @@ class ClientCapabilities
      * @param array<string, mixed>|null $experimental Experimental, non-standard capabilities that the client supports
      * @param array<string, mixed>|null $sampling Whether the client supports sampling from an LLM
      * @param array<string, mixed>|null $roots Whether the client supports listing roots
-     * @param array<string, mixed>|null $additional Additional capabilities not defined in the core specification
+     * @param array<string, mixed> $additional Additional capabilities not defined in the core specification
      */
     public function __construct(
         public ?array $experimental = null,

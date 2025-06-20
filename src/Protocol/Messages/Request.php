@@ -26,10 +26,7 @@ class Request extends JsonRpcMessage
         public string $method,
         public ?array $params = null
     ) {
-        // Request ID must not be null
-        if ($id === null) {
-            throw new InvalidArgumentException('Request ID cannot be null');
-        }
+        // No validation needed - PHP type system ensures $id is string|int
     }
     
     /**

@@ -98,6 +98,7 @@ class ErrorRecovery
         
         $attempt = 0;
         $delay = $initialDelay;
+        /** @var \Throwable|null $lastException */
         $lastException = null;
         
         while ($attempt <= $maxRetries) {
@@ -151,13 +152,18 @@ class ErrorRecovery
         }
         
         // All retries failed
-        $this->logger->error('All retry attempts failed', [
-            'total_attempts' => $attempt,
-            'last_exception' => get_class($lastException),
-            'message' => $lastException->getMessage(),
-        ]);
+        if ($lastException !== null) {
+            $this->logger->error('All retry attempts failed', [
+                'total_attempts' => $attempt,
+                'last_exception' => get_class($lastException),
+                'message' => $lastException->getMessage(),
+            ]);
+            
+            throw $lastException;
+        }
         
-        throw $lastException;
+        // This should never happen, but we need it for PHPStan
+        throw new \RuntimeException('All retry attempts failed with no exception captured');
     }
     
     /**
