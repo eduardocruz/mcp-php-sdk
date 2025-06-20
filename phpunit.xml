@@ -22,6 +22,7 @@
         </testsuite>
     </testsuites>
     
+    <!-- Source section disabled to prevent warnings in PHPUnit 10.0.0
     <source>
         <include>
             <directory>src</directory>
@@ -30,6 +31,7 @@
             <directory>src/Utilities/Logging</directory>
         </exclude>
     </source>
+    -->
     
     <!-- Coverage disabled to prevent warnings when no coverage driver is available
     <coverage>
@@ -41,7 +43,9 @@
     </coverage>
     -->
     
+    <!-- Logging disabled to prevent warnings in PHPUnit 10.0.0
     <logging>
         <junit outputFile="test-results.xml"/>
     </logging>
+    -->
 </phpunit> 
