@@ -20,6 +20,9 @@ use ModelContextProtocol\Server\Prompts\PromptManager;
 use ModelContextProtocol\Server\Prompts\Prompt;
 use ModelContextProtocol\Server\Prompts\Schema\PromptSchema;
 use ModelContextProtocol\Protocol\Errors\ErrorResponseBuilder;
+use ModelContextProtocol\Utilities\HealthMonitor;
+use ModelContextProtocol\Utilities\Cancellation\CancellationManager;
+use ModelContextProtocol\Utilities\Cancellation\CancellationToken;
 
 /**
  * High-level MCP server that provides a simpler API for working with resources, tools, and prompts.
@@ -80,6 +83,11 @@ class McpServer
     private bool $promptHandlersInitialized = false;
     
     /**
+     * @var HealthMonitor The health monitor for connection monitoring
+     */
+    private HealthMonitor $healthMonitor;
+    
+    /**
      * Constructor.
      *
      * @param string $name The server name
@@ -117,6 +125,12 @@ class McpServer
         // Initialize prompt manager
         $this->promptManager = new PromptManager();
         
+        // Initialize health monitor
+        $this->healthMonitor = new HealthMonitor($this->logger);
+        
+        // Connect health monitor to underlying server
+        $this->server->setHealthMonitor($this->healthMonitor);
+        
         // Connect notification manager to managers
         $this->toolManager->setNotificationManager($this->server->getNotificationManager());
         $this->resourceManager->setNotificationManager($this->server->getNotificationManager());
@@ -125,6 +139,12 @@ class McpServer
         // Set up initialization callback
         $this->server->onInitialized(function () {
             $this->logger->info('Server fully initialized');
+            
+            // Start health monitoring after initialization
+            if ($this->server->isConnected()) {
+                $this->healthMonitor->setTransport($this->server->getTransport());
+                $this->healthMonitor->startMonitoring();
+            }
         });
     }
     
@@ -179,6 +199,120 @@ class McpServer
     }
     
     /**
+     * Get the health monitor instance.
+     *
+     * @return HealthMonitor The health monitor instance
+     */
+    public function getHealthMonitor(): HealthMonitor
+    {
+        return $this->healthMonitor;
+    }
+    
+    /**
+     * Get the cancellation manager instance.
+     *
+     * @return CancellationManager The cancellation manager instance
+     */
+    public function getCancellationManager(): CancellationManager
+    {
+        return $this->server->getCancellationManager();
+    }
+    
+    /**
+     * Start connection health monitoring.
+     *
+     * @return void
+     */
+    public function startHealthMonitoring(): void
+    {
+        $this->healthMonitor->startMonitoring();
+    }
+    
+    /**
+     * Stop connection health monitoring.
+     *
+     * @return void
+     */
+    public function stopHealthMonitoring(): void
+    {
+        $this->healthMonitor->stopMonitoring();
+    }
+    
+    /**
+     * Check if the connection is healthy.
+     *
+     * @return bool True if the connection is healthy
+     */
+    public function isConnectionHealthy(): bool
+    {
+        return $this->healthMonitor->isHealthy();
+    }
+    
+    /**
+     * Get connection health statistics.
+     *
+     * @return array<string, mixed> Connection health statistics
+     */
+    public function getConnectionStats(): array
+    {
+        return $this->healthMonitor->getStats();
+    }
+    
+    /**
+     * Perform a health monitoring tick.
+     * This should be called periodically to maintain connection health monitoring.
+     *
+     * @return void
+     */
+    public function healthTick(): void
+    {
+        $this->healthMonitor->tick();
+    }
+    
+    /**
+     * Cancel a specific request.
+     *
+     * @param string $requestId The request ID to cancel
+     * @param string|null $reason Optional reason for cancellation
+     * @return bool True if the request was found and cancelled
+     */
+    public function cancelRequest(string $requestId, ?string $reason = null): bool
+    {
+        return $this->getCancellationManager()->cancelRequest($requestId, $reason);
+    }
+    
+    /**
+     * Cancel all active requests.
+     *
+     * @param string|null $reason Optional reason for cancellation
+     * @return int Number of requests cancelled
+     */
+    public function cancelAllRequests(?string $reason = null): int
+    {
+        return $this->getCancellationManager()->cancelAll($reason);
+    }
+    
+    /**
+     * Get the number of active requests.
+     *
+     * @return int Number of active requests
+     */
+    public function getActiveRequestCount(): int
+    {
+        return $this->getCancellationManager()->getActiveRequestCount();
+    }
+    
+    /**
+     * Get statistics about active requests and cancellations.
+     *
+     * @return array<string, mixed> Request statistics
+     */
+    public function getRequestStats(): array
+    {
+        return $this->getCancellationManager()->getStats();
+    }
+    
+    /**
      * Attaches to the given transport, starts it, and starts listening for messages.
      *
      * The server object assumes ownership of the Transport, replacing any callbacks
@@ -191,6 +325,9 @@ class McpServer
     public function connect(TransportInterface $transport): void
     {
         $this->server->connect($transport);
+        
+        // Set transport for health monitor
+        $this->healthMonitor->setTransport($transport);
     }
     
     /**
@@ -200,6 +337,18 @@ class McpServer
      */
     public function close(): void
     {
+        // Cancel all active requests before closing
+        $cancelledCount = $this->cancelAllRequests('Server shutting down');
+        if ($cancelledCount > 0) {
+            $this->logger->info('Cancelled active requests during shutdown', [
+                'cancelledCount' => $cancelledCount
+            ]);
+        }
+        
+        // Stop health monitoring before closing
+        $this->healthMonitor->stopMonitoring();
+        $this->healthMonitor->setTransport(null);
+        
         $this->server->close();
     }
     

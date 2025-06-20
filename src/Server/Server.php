@@ -9,6 +9,9 @@ use ModelContextProtocol\Protocol\Messages\Response;
 use ModelContextProtocol\Protocol\Messages\Notification;
 use ModelContextProtocol\Protocol\Messages\ErrorData;
 use ModelContextProtocol\Protocol\Errors\ErrorResponseBuilder;
+use ModelContextProtocol\Utilities\HealthMonitor;
+use ModelContextProtocol\Utilities\Cancellation\CancellationManager;
+use ModelContextProtocol\Utilities\Cancellation\CancellationToken;
 use ModelContextProtocol\Protocol\Models\ClientCapabilities;
 use ModelContextProtocol\Protocol\Models\Implementation;
 use ModelContextProtocol\Protocol\Models\InitializeParams;
@@ -69,6 +72,16 @@ class Server
     private $initializedHandler = null;
     
     /**
+     * @var HealthMonitor|null Optional health monitor for connection monitoring
+     */
+    private ?HealthMonitor $healthMonitor = null;
+    
+    /**
+     * @var CancellationManager The cancellation manager for request cancellation
+     */
+    private CancellationManager $cancellationManager;
+    
+    /**
      * @var LoggerInterface The logger instance
      */
     private LoggerInterface $logger;
@@ -95,6 +108,7 @@ class Server
         $this->capabilities = $capabilities ?? new ServerCapabilities();
         $this->logger = $logger ?? new ConsoleLogger();
         $this->notificationManager = new NotificationManager($this->logger);
+        $this->cancellationManager = new CancellationManager($this->logger);
         
         // Register built-in handlers
         $this->setRequestHandler('initialize', [$this, 'handleInitialize']);
@@ -258,9 +272,20 @@ class Server
         }
         
         if (isset($this->requestHandlers[$method])) {
+            // Register request for cancellation tracking if it has an ID
+            $cancellationToken = null;
+            if (is_string($request->id)) {
+                $cancellationToken = $this->cancellationManager->registerRequest($request->id, [
+                    'method' => $method,
+                    'startedAt' => microtime(true)
+                ]);
+            }
+            
             try {
                 $handler = $this->requestHandlers[$method];
-                $result = $handler($request);
+                
+                // Call handler with cancellation token if supported
+                $result = $this->callHandlerWithCancellation($handler, $request, $cancellationToken);
                 
                 if (is_array($result)) {
                     $this->sendResponse($request, $result);
@@ -283,6 +308,11 @@ class Server
                 
                 $response = ErrorResponseBuilder::fromException($request, $e);
                 $this->sendRawResponse($response);
+            } finally {
+                // Unregister the request when done
+                if (is_string($request->id)) {
+                    $this->cancellationManager->unregisterRequest($request->id);
+                }
             }
         } else {
             $this->logger->warning('Method not found', ['method' => $method]);
@@ -397,6 +427,11 @@ class Server
      */
     public function handlePing(Request $request): array
     {
+        // Notify health monitor if available
+        if ($this->healthMonitor !== null && is_string($request->id)) {
+            $this->healthMonitor->handlePingResponse($request->id);
+        }
+        
         return [];
     }
     
@@ -415,12 +450,21 @@ class Server
             return;
         }
         
+        $reason = $notification->params['reason'] ?? null;
+        
         $this->logger->debug('Request cancelled by client', [
             'requestId' => $requestId,
-            'reason' => $notification->params['reason'] ?? 'Unknown reason'
+            'reason' => $reason
         ]);
         
-        // In a real implementation, we would track in-flight requests and cancel them
+        // Cancel the request using the cancellation manager
+        $cancelled = $this->cancellationManager->cancelRequest($requestId, $reason);
+        
+        if (!$cancelled) {
+            $this->logger->debug('Cancellation requested for unknown or already completed request', [
+                'requestId' => $requestId
+            ]);
+        }
     }
     
     /**
@@ -632,6 +676,17 @@ class Server
     }
     
     /**
+     * Check if a notification handler exists for a method.
+     *
+     * @param string $method The method name
+     * @return bool True if a handler exists
+     */
+    public function hasNotificationHandler(string $method): bool
+    {
+        return isset($this->notificationHandlers[$method]);
+    }
+    
+    /**
      * Set the callback for when initialization is fully complete.
      *
      * @param callable $handler The handler function
@@ -680,5 +735,62 @@ class Server
     public function getClientVersion(): ?Implementation
     {
         return $this->clientVersion;
+    }
+    
+    /**
+     * Set the health monitor for connection monitoring.
+     *
+     * @param HealthMonitor|null $healthMonitor The health monitor instance
+     * @return void
+     */
+    public function setHealthMonitor(?HealthMonitor $healthMonitor): void
+    {
+        $this->healthMonitor = $healthMonitor;
+    }
+    
+    /**
+     * Get the cancellation manager.
+     *
+     * @return CancellationManager The cancellation manager instance
+     */
+    public function getCancellationManager(): CancellationManager
+    {
+        return $this->cancellationManager;
+    }
+    
+    /**
+     * Call a handler with optional cancellation token support.
+     *
+     * @param callable $handler The handler to call
+     * @param Request $request The request
+     * @param CancellationToken|null $cancellationToken Optional cancellation token
+     * @return mixed The handler result
+     */
+    private function callHandlerWithCancellation(callable $handler, Request $request, ?CancellationToken $cancellationToken): mixed
+    {
+        // Use reflection to check if the handler accepts a cancellation token
+        try {
+            $reflection = new \ReflectionFunction($handler);
+            $parameters = $reflection->getParameters();
+            
+            // If handler has 2+ parameters and the second one is CancellationToken, pass it
+            if (count($parameters) >= 2) {
+                $secondParam = $parameters[1];
+                $paramType = $secondParam->getType();
+                
+                if ($paramType instanceof \ReflectionNamedType && 
+                    $paramType->getName() === CancellationToken::class) {
+                    return $handler($request, $cancellationToken);
+                }
+            }
+        } catch (\ReflectionException $e) {
+            // If reflection fails, fall back to single parameter call
+            $this->logger->debug('Could not reflect handler, using single parameter', [
+                'error' => $e->getMessage()
+            ]);
+        }
+        
+        // Default: call handler with just the request
+        return $handler($request);
     }
 }
