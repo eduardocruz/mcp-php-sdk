@@ -126,7 +126,8 @@ class StdioTransport implements TransportInterface
     {
         if ($this->started) {
             throw new ConnectionException(
-                'StdioTransport already started! If using Client or Server classes, note that connect() calls start() automatically.'
+                'StdioTransport already started! If using Client or Server classes, ' .
+                'note that connect() calls start() automatically.'
             );
         }
 

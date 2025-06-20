@@ -67,7 +67,8 @@ class Server
     private bool $initialized = false;
 
     /**
-     * @var callable|null Callback for when initialization has fully completed (i.e., the client has sent an `initialized` notification)
+     * @var callable|null Callback for when initialization has fully completed
+     * (i.e., the client has sent an `initialized` notification)
      */
     private $initializedHandler = null;
 
@@ -767,8 +768,11 @@ class Server
      * @param CancellationToken|null $cancellationToken Optional cancellation token
      * @return mixed The handler result
      */
-    private function callHandlerWithCancellation(callable $handler, Request $request, ?CancellationToken $cancellationToken): mixed
-    {
+    private function callHandlerWithCancellation(
+        callable $handler,
+        Request $request,
+        ?CancellationToken $cancellationToken
+    ): mixed {
         // Use reflection to check if the handler accepts a cancellation token
         try {
             // Handle both closures and callable strings/arrays

@@ -270,7 +270,10 @@ class McpServerIntegrationTest extends TestCase
         $notificationManager = $this->server->getNotificationManager();
 
         // Verify notification manager is accessible
-        $this->assertInstanceOf(\ModelContextProtocol\Protocol\Notifications\NotificationManager::class, $notificationManager);
+        $this->assertInstanceOf(
+            \ModelContextProtocol\Protocol\Notifications\NotificationManager::class,
+            $notificationManager
+        );
 
         $this->server->registerTool(
             'test-tool',
