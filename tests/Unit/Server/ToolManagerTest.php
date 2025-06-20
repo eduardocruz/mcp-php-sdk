@@ -17,7 +17,8 @@ class ToolManagerTest extends TestCase
     {
         parent::setUp();
         $this->notificationManager = new NotificationManager();
-        $this->toolManager = new ToolManager($this->notificationManager);
+        $this->toolManager = new ToolManager();
+        $this->toolManager->setNotificationManager($this->notificationManager);
     }
 
     public function testRegisterTool(): void

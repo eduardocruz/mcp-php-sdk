@@ -154,15 +154,19 @@ class McpServerIntegrationTest extends TestCase
                         [
                             'role' => 'system',
                             'content' => [
-                                'type' => 'text',
-                                'text' => "You are a {$params['language']} code reviewer."
+                                [
+                                    'type' => 'text',
+                                    'text' => "You are a {$params['language']} code reviewer."
+                                ]
                             ]
                         ],
                         [
                             'role' => 'user',
                             'content' => [
-                                'type' => 'text',
-                                'text' => "Please review this code:\n\n{$params['code']}"
+                                [
+                                    'type' => 'text',
+                                    'text' => "Please review this code:\n\n{$params['code']}"
+                                ]
                             ]
                         ]
                     ]

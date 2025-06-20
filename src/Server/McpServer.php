@@ -20,6 +20,7 @@ use ModelContextProtocol\Server\Prompts\PromptManager;
 use ModelContextProtocol\Server\Prompts\Prompt;
 use ModelContextProtocol\Server\Prompts\Schema\PromptSchema;
 use ModelContextProtocol\Protocol\Errors\ErrorResponseBuilder;
+use ModelContextProtocol\Protocol\Constants;
 use ModelContextProtocol\Utilities\HealthMonitor;
 use ModelContextProtocol\Utilities\Cancellation\CancellationManager;
 use ModelContextProtocol\Utilities\Cancellation\CancellationToken;
@@ -42,15 +43,7 @@ class McpServer
      */
     private LoggerInterface $logger;
     
-    /**
-     * @var array<string, mixed> Registered resources
-     */
-    private array $registeredResources = [];
-    
-    /**
-     * @var array<string, mixed> Registered resource templates
-     */
-    private array $registeredResourceTemplates = [];
+    // Note: Resource tracking is handled by ResourceManager, these properties are not needed
     
     /**
      * @var ToolManager The tool manager
@@ -617,7 +610,7 @@ class McpServer
             
             if ($name === null) {
                 return ErrorResponseBuilder::createErrorArray(
-                    ErrorResponseBuilder::ERROR_CODE_INVALID_PARAMS,
+                    Constants::ERROR_CODE_INVALID_PARAMS,
                     'Missing tool name',
                     ['parameter' => 'name']
                 );
@@ -722,7 +715,7 @@ class McpServer
         
         if ($uri === null) {
             return ErrorResponseBuilder::createErrorArray(
-                ErrorResponseBuilder::ERROR_CODE_INVALID_PARAMS,
+                Constants::ERROR_CODE_INVALID_PARAMS,
                 'Missing required parameter: uri',
                 ['parameter' => 'uri']
             );
@@ -787,7 +780,7 @@ class McpServer
         
         if ($name === null) {
             return ErrorResponseBuilder::createErrorArray(
-                ErrorResponseBuilder::ERROR_CODE_INVALID_PARAMS,
+                Constants::ERROR_CODE_INVALID_PARAMS,
                 'Missing required parameter: name',
                 ['parameter' => 'name']
             );
@@ -976,7 +969,7 @@ class McpServer
      *
      * @param string $name The name of the resource
      * @param string $uri The URI of the resource
-     * @param array<string, mixed> $content The resource content
+     * @param array<mixed> $content The resource content
      * @param array<string, mixed>|null $listOptions Options for listing this resource
      * @return StaticResource The registered resource
      */

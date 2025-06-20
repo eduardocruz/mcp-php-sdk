@@ -24,6 +24,7 @@ class JsonRpcMessageTest extends TestCase
     {
         $request = new Request('test-123', 'test/method', ['param' => 'value']);
         $json = json_encode($request);
+        $this->assertNotFalse($json);
         $decoded = json_decode($json, true);
         
         $this->assertEquals('2.0', $decoded['jsonrpc']);
@@ -68,6 +69,7 @@ class JsonRpcMessageTest extends TestCase
     {
         $notification = new Notification('test/notification', ['data' => 'value']);
         $json = json_encode($notification);
+        $this->assertNotFalse($json);
         $decoded = json_decode($json, true);
         
         $this->assertEquals('2.0', $decoded['jsonrpc']);

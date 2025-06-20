@@ -29,8 +29,11 @@ class ErrorResponseBuilderTest extends TestCase
         $this->assertEquals('2.0', $response->jsonrpc);
         $this->assertNull($response->result);
         $this->assertNotNull($response->error);
-        $this->assertEquals(Constants::ERROR_CODE_INVALID_PARAMS, $response->error->code);
-        $this->assertEquals('Invalid parameters provided', $response->error->message);
+        
+        $error = $response->error;
+        $this->assertNotNull($error);
+        $this->assertEquals(Constants::ERROR_CODE_INVALID_PARAMS, $error->code);
+        $this->assertEquals('Invalid parameters provided', $error->message);
     }
 
     public function testCreateErrorResponseWithData(): void
@@ -44,8 +47,10 @@ class ErrorResponseBuilderTest extends TestCase
             $data
         );
 
-        $this->assertNotNull($response->error->data);
-        $this->assertEquals($data, $response->error->data['details']);
+        $error = $response->error;
+        $this->assertNotNull($error);
+        $this->assertNotNull($error->data);
+        $this->assertEquals($data, $error->data['details']);
     }
 
     public function testCreateErrorResponseWithContext(): void
@@ -60,11 +65,13 @@ class ErrorResponseBuilderTest extends TestCase
             $context
         );
 
-        $this->assertNotNull($response->error->data);
-        $this->assertArrayHasKey('context', $response->error->data);
-        $this->assertEquals('test_op', $response->error->data['context']['operation']);
-        $this->assertEquals('user123', $response->error->data['context']['user_id']);
-        $this->assertArrayHasKey('timestamp', $response->error->data);
+        $error = $response->error;
+        $this->assertNotNull($error);
+        $this->assertNotNull($error->data);
+        $this->assertArrayHasKey('context', $error->data);
+        $this->assertEquals('test_op', $error->data['context']['operation']);
+        $this->assertEquals('user123', $error->data['context']['user_id']);
+        $this->assertArrayHasKey('timestamp', $error->data);
     }
 
     public function testFromException(): void
@@ -74,10 +81,13 @@ class ErrorResponseBuilderTest extends TestCase
         $response = ErrorResponseBuilder::fromException($this->request, $exception);
 
         $this->assertEquals('test-123', $response->id);
-        $this->assertEquals(Constants::ERROR_CODE_INVALID_PARAMS, $response->error->code);
-        $this->assertEquals('Test exception message', $response->error->message);
-        $this->assertArrayHasKey('context', $response->error->data);
-        $this->assertEquals('InvalidArgumentException', $response->error->data['context']['exception']);
+        
+        $error = $response->error;
+        $this->assertNotNull($error);
+        $this->assertEquals(Constants::ERROR_CODE_INVALID_PARAMS, $error->code);
+        $this->assertEquals('Test exception message', $error->message);
+        $this->assertArrayHasKey('context', $error->data);
+        $this->assertEquals('InvalidArgumentException', $error->data['context']['exception']);
     }
 
     public function testFromExceptionWithCustomCode(): void
@@ -90,8 +100,10 @@ class ErrorResponseBuilderTest extends TestCase
             ErrorResponseBuilder::ERROR_CODE_TOOL_EXECUTION_ERROR
         );
 
-        $this->assertEquals(ErrorResponseBuilder::ERROR_CODE_TOOL_EXECUTION_ERROR, $response->error->code);
-        $this->assertEquals('Runtime error', $response->error->message);
+        $error = $response->error;
+        $this->assertNotNull($error);
+        $this->assertEquals(ErrorResponseBuilder::ERROR_CODE_TOOL_EXECUTION_ERROR, $error->code);
+        $this->assertEquals('Runtime error', $error->message);
     }
 
     public function testCreateErrorArray(): void
@@ -112,16 +124,20 @@ class ErrorResponseBuilderTest extends TestCase
     {
         $response = ErrorResponseBuilder::toolNotFound($this->request, 'missing-tool');
 
-        $this->assertEquals(ErrorResponseBuilder::ERROR_CODE_TOOL_NOT_FOUND, $response->error->code);
-        $this->assertStringContainsString('missing-tool', $response->error->message);
+        $error = $response->error;
+        $this->assertNotNull($error);
+        $this->assertEquals(ErrorResponseBuilder::ERROR_CODE_TOOL_NOT_FOUND, $error->code);
+        $this->assertStringContainsString('missing-tool', $error->message);
     }
 
     public function testResourceNotFound(): void
     {
         $response = ErrorResponseBuilder::resourceNotFound($this->request, 'file://missing.txt');
 
-        $this->assertEquals(ErrorResponseBuilder::ERROR_CODE_RESOURCE_NOT_FOUND, $response->error->code);
-        $this->assertStringContainsString('file://missing.txt', $response->error->message);
+        $error = $response->error;
+        $this->assertNotNull($error);
+        $this->assertEquals(ErrorResponseBuilder::ERROR_CODE_RESOURCE_NOT_FOUND, $error->code);
+        $this->assertStringContainsString('file://missing.txt', $error->message);
     }
 
     public function testValidationError(): void
@@ -130,8 +146,10 @@ class ErrorResponseBuilderTest extends TestCase
         
         $response = ErrorResponseBuilder::validationError($this->request, $errors);
 
-        $this->assertEquals(ErrorResponseBuilder::ERROR_CODE_VALIDATION_ERROR, $response->error->code);
-        $this->assertEquals(['errors' => $errors], $response->error->data['details']);
+        $error = $response->error;
+        $this->assertNotNull($error);
+        $this->assertEquals(ErrorResponseBuilder::ERROR_CODE_VALIDATION_ERROR, $error->code);
+        $this->assertEquals(['errors' => $errors], $error->data['details']);
     }
 
     public function testIsValidErrorCode(): void
@@ -164,7 +182,9 @@ class ErrorResponseBuilderTest extends TestCase
             $exception = new $exceptionClass('Test message');
             $response = ErrorResponseBuilder::fromException($this->request, $exception);
             
-            $this->assertEquals($expectedCode, $response->error->code, 
+            $error = $response->error;
+            $this->assertNotNull($error);
+            $this->assertEquals($expectedCode, $error->code, 
                 "Exception {$exceptionClass} should map to error code {$expectedCode}");
         }
     }

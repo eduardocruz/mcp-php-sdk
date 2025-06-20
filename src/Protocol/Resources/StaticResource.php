@@ -14,8 +14,8 @@ class StaticResource extends Resource
      * 
      * @param string $name The resource name
      * @param string $uri The resource URI
-     * @param array $content The resource content
-     * @param array|null $listOptions Options for listing this resource
+     * @param array<mixed> $content The resource content
+     * @param array<mixed>|null $listOptions Options for listing this resource
      */
     public function __construct(
         string $name,
@@ -41,7 +41,7 @@ class StaticResource extends Resource
     /**
      * Update the content of this resource
      *
-     * @param array<string, mixed> $content The new content
+     * @param array<mixed> $content The new content
      * @return void
      */
     public function updateContent(array $content): void
@@ -52,7 +52,7 @@ class StaticResource extends Resource
     /**
      * Get the current content of this resource
      *
-     * @return array<string, mixed> The current content
+     * @return array<mixed> The current content
      */
     public function getContent(): array
     {

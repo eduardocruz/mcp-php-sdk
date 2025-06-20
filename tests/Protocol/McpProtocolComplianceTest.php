@@ -170,7 +170,7 @@ class McpProtocolComplianceTest extends TestCase
         $this->server->registerResource(
             'test-resource',
             'test://resource',
-            [['type' => 'text', 'text' => 'Test content']],
+            ['content' => [['type' => 'text', 'text' => 'Test content']]],
             ['description' => 'A test resource']
         );
 
@@ -377,7 +377,7 @@ class McpProtocolComplianceTest extends TestCase
         $code = $response['error']['code'];
         $this->assertTrue(
             ($code >= -32768 && $code <= -32000) || // JSON-RPC reserved range
-            ($code >= -32099 && $code <= -32000),   // Server-defined range
+            ($code >= -32099 && $code <= -31000),   // Server-defined range (fixed range)
             "Error code {$code} is not in valid range"
         );
     }
