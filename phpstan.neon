@@ -10,6 +10,9 @@ parameters:
         - '#Access to an undefined property object::\$[a-zA-Z_]+#'
         # Allow mixed types for JSON-RPC parameters
         - '#Method .* has parameter .* with no value type specified in iterable type array#'
-    checkMissingIterableValueType: false
-    checkGenericClassInNonGenericObjectType: false
+        # Ignore missing typehints from arrays and generics
+        -
+            identifier: missingType.iterableValue
+        -
+            identifier: missingType.generics
     reportUnmatchedIgnoredErrors: false 

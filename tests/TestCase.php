@@ -22,16 +22,24 @@ abstract class TestCase extends PHPUnitTestCase
 
     /**
      * Create a mock JSON-RPC response
+     * 
+     * @param mixed $result The result data
+     * @param string|null $id The response ID
+     * @return Response The created response
      */
-    protected function createMockResponse($result = null, ?string $id = null): Response
+    protected function createMockResponse(mixed $result = null, ?string $id = null): Response
     {
         return new Response($id ?? 'test-' . uniqid(), $result);
     }
 
     /**
      * Assert that a response has the expected structure
+     * 
+     * @param mixed $response The response to validate
+     * @param string|null $expectedId The expected ID
+     * @return void
      */
-    protected function assertValidJsonRpcResponse($response, ?string $expectedId = null): void
+    protected function assertValidJsonRpcResponse(mixed $response, ?string $expectedId = null): void
     {
         $this->assertInstanceOf(Response::class, $response);
         
@@ -119,9 +127,11 @@ abstract class TestCase extends PHPUnitTestCase
     {
         // Clean up any temporary files created during tests
         $tempFiles = glob(sys_get_temp_dir() . '/mcp_test_*');
-        foreach ($tempFiles as $file) {
-            if (file_exists($file)) {
-                unlink($file);
+        if ($tempFiles !== false) {
+            foreach ($tempFiles as $file) {
+                if (file_exists($file)) {
+                    unlink($file);
+                }
             }
         }
         
@@ -130,8 +140,12 @@ abstract class TestCase extends PHPUnitTestCase
 
     /**
      * Get reflection property value (for testing private/protected properties)
+     * 
+     * @param object $object The object to get property from
+     * @param string $propertyName The property name
+     * @return mixed The property value
      */
-    protected function getPropertyValue(object $object, string $propertyName)
+    protected function getPropertyValue(object $object, string $propertyName): mixed
     {
         $reflection = new \ReflectionClass($object);
         $property = $reflection->getProperty($propertyName);
@@ -141,8 +155,13 @@ abstract class TestCase extends PHPUnitTestCase
 
     /**
      * Set reflection property value (for testing private/protected properties)
+     * 
+     * @param object $object The object to set property on
+     * @param string $propertyName The property name
+     * @param mixed $value The value to set
+     * @return void
      */
-    protected function setPropertyValue(object $object, string $propertyName, $value): void
+    protected function setPropertyValue(object $object, string $propertyName, mixed $value): void
     {
         $reflection = new \ReflectionClass($object);
         $property = $reflection->getProperty($propertyName);
@@ -152,8 +171,13 @@ abstract class TestCase extends PHPUnitTestCase
 
     /**
      * Call private/protected method for testing
+     * 
+     * @param object $object The object to call method on
+     * @param string $methodName The method name
+     * @param array<mixed> $args The method arguments
+     * @return mixed The method return value
      */
-    protected function callMethod(object $object, string $methodName, array $args = [])
+    protected function callMethod(object $object, string $methodName, array $args = []): mixed
     {
         $reflection = new \ReflectionClass($object);
         $method = $reflection->getMethod($methodName);

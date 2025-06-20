@@ -30,7 +30,7 @@
     "scripts": {
         "test": "phpunit",
         "test-coverage": "@php -r \"if (extension_loaded('xdebug') || extension_loaded('pcov')) { passthru('phpunit --configuration phpunit-coverage.xml --coverage-html coverage-report'); } else { echo 'No coverage driver available - running tests without coverage'; passthru('phpunit'); }\"",
-        "phpstan": "phpstan analyse src tests --level=8",
+        "phpstan": "phpstan analyse src tests --level=8 --memory-limit=512M",
         "cs-check": "phpcs src tests --standard=PSR12",
         "cs-fix": "phpcbf src tests --standard=PSR12",
         "phpmd": "phpmd src text cleancode,codesize,controversial,design,naming,unusedcode",

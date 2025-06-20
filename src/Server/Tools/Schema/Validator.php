@@ -57,8 +57,12 @@ class Validator
     
     /**
      * Validate a value against a type
+     * 
+     * @param mixed $value The value to validate
+     * @param string $type The expected type
+     * @return mixed Always returns true/false for type validation
      */
-    private function validateType($value, string $type): bool
+    private function validateType(mixed $value, string $type): mixed
     {
         switch ($type) {
             case 'string':
