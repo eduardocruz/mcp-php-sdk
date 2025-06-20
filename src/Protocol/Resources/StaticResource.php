@@ -37,4 +37,35 @@ class StaticResource extends Resource
             'content' => $this->content
         ];
     }
+    
+    /**
+     * Update the content of this resource
+     *
+     * @param array<string, mixed> $content The new content
+     * @return void
+     */
+    public function updateContent(array $content): void
+    {
+        $this->content = $content;
+    }
+    
+    /**
+     * Get the current content of this resource
+     *
+     * @return array<string, mixed> The current content
+     */
+    public function getContent(): array
+    {
+        return $this->content;
+    }
+    
+    /**
+     * Get the URI of this resource
+     *
+     * @return string The resource URI
+     */
+    public function getUri(): string
+    {
+        return $this->template->getTemplate();
+    }
 }

@@ -284,7 +284,7 @@ class UriTemplate
      */
     private function escapeRegExp(string $str): string
     {
-        return preg_quote($str, '/');
+        return preg_quote($str, '#');
     }
 
     /**
@@ -326,7 +326,7 @@ class UriTemplate
                 $pattern = '\\.([^/,]+)';
                 break;
             case '/':
-                $pattern = '/' . ($part['exploded'] ? '([^/]+(?:,[^/]+)*)' : '([^/,]+)');
+                $pattern = '/(' . ($part['exploded'] ? '[^/]+(?:,[^/]+)*' : '[^/,]+') . ')';
                 break;
             default:
                 $pattern = '([^/]+)';
@@ -366,7 +366,7 @@ class UriTemplate
         $pattern .= '$';
         $this->validateLength($pattern, self::MAX_REGEX_LENGTH, "Generated regex pattern");
         
-        if (!preg_match('/' . $pattern . '/', $uri, $matches)) {
+        if (!preg_match('#' . $pattern . '#', $uri, $matches)) {
             return null;
         }
 
