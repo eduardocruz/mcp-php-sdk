@@ -52,7 +52,19 @@ class ConsoleLogger implements LoggerInterface
     public function __construct(string $minLevel = self::LOG_LEVEL_INFO, $errorOutput = null)
     {
         $this->minLevel = strtolower($minLevel);
-        $this->errorOutput = $errorOutput ?? fopen('php://stderr', 'w');
+        
+        if ($errorOutput !== null) {
+            if (!is_resource($errorOutput)) {
+                throw new \RuntimeException('Error output must be a valid resource');
+            }
+            $this->errorOutput = $errorOutput;
+        } else {
+            $errorResource = fopen('php://stderr', 'w');
+            if ($errorResource === false) {
+                throw new \RuntimeException('Failed to open error output stream');
+            }
+            $this->errorOutput = $errorResource;
+        }
     }
     
     /**

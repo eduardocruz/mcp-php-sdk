@@ -375,7 +375,10 @@ class UriTemplate
             $name = $names[$i]['name'];
             $exploded = $names[$i]['exploded'];
             $value = $matches[$i + 1];
-            $cleanName = str_replace('*', '', $name);
+            
+            // Ensure name is a string before processing
+            $nameStr = is_array($name) ? (is_array($name) && isset($name[0]) ? (string)$name[0] : '') : (string)$name;
+            $cleanName = str_replace('*', '', $nameStr);
 
             if ($exploded && str_contains($value, ',')) {
                 $result[$cleanName] = explode(',', $value);
