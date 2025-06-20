@@ -26,7 +26,7 @@ class Constants
      * Predefined error codes for the MCP protocol.
      */
     public const ERROR_CODE_CONNECTION_CLOSED = -32000;
-    public const ERROR_CODE_REQUEST_TIMEOUT = -32001;
+    public const ERROR_CODE_REQUEST_TIMEOUT = -32002;
     public const ERROR_CODE_PARSE_ERROR = -32700;
     public const ERROR_CODE_INVALID_REQUEST = -32600;
     public const ERROR_CODE_METHOD_NOT_FOUND = -32601;

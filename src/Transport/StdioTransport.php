@@ -20,12 +20,12 @@ use Throwable;
 class StdioTransport implements TransportInterface
 {
     /**
-     * @var resource The stdin stream
+     * @var resource|null The stdin stream
      */
     private $stdin;
     
     /**
-     * @var resource The stdout stream
+     * @var resource|null The stdout stream
      */
     private $stdout;
     
@@ -95,8 +95,15 @@ class StdioTransport implements TransportInterface
         ini_set('log_errors', '1');
         ini_set('error_log', 'php://stderr');
         
-        $this->stdin = $stdin ?? fopen('php://stdin', 'r');
-        $this->stdout = $stdout ?? fopen('php://stdout', 'w');
+        $stdinResource = $stdin ?? fopen('php://stdin', 'r');
+        $stdoutResource = $stdout ?? fopen('php://stdout', 'w');
+        
+        if ($stdinResource === false || $stdoutResource === false) {
+            throw new InvalidArgumentException('Failed to open stream resources');
+        }
+        
+        $this->stdin = $stdinResource;
+        $this->stdout = $stdoutResource;
         $this->logger = $logger ?? new ConsoleLogger();
         $this->sessionManager = $sessionManager ?? new SessionManager($this->logger);
         
@@ -151,6 +158,9 @@ class StdioTransport implements TransportInterface
         
         try {
             // Read data from stdin if available
+            if (!is_resource($this->stdin)) {
+                return;
+            }
             $data = @fread($this->stdin, 8192);
             
             if ($data === false) {
@@ -262,6 +272,10 @@ class StdioTransport implements TransportInterface
             // Store last sent message timestamp
             $this->sessionManager->set('last_sent', time());
             
+            if (!is_resource($this->stdout)) {
+                throw new ConnectionException('stdout is not a valid resource');
+            }
+            
             $bytesWritten = @fwrite($this->stdout, $json);
             
             if ($bytesWritten === false || $bytesWritten < strlen($json)) {
@@ -273,7 +287,9 @@ class StdioTransport implements TransportInterface
                 );
             }
             
-            fflush($this->stdout);
+            if (is_resource($this->stdout)) {
+                fflush($this->stdout);
+            }
         } catch (Throwable $e) {
             $this->logger->error('Error sending message: ' . $e->getMessage(), [
                 'exception' => get_class($e),
@@ -302,14 +318,18 @@ class StdioTransport implements TransportInterface
         $this->messageBuffer->clear();
         
         // Close streams if not the default ones
-        if (get_resource_type($this->stdin) !== 'Unknown' && 
-            stream_get_meta_data($this->stdin)['uri'] !== 'php://stdin') {
-            fclose($this->stdin);
+        if (is_resource($this->stdin) && get_resource_type($this->stdin) !== 'Unknown') {
+            $stdinMeta = stream_get_meta_data($this->stdin);
+            if ($stdinMeta['uri'] !== 'php://stdin') {
+                fclose($this->stdin);
+            }
         }
         
-        if (get_resource_type($this->stdout) !== 'Unknown' && 
-            stream_get_meta_data($this->stdout)['uri'] !== 'php://stdout') {
-            fclose($this->stdout);
+        if (is_resource($this->stdout) && get_resource_type($this->stdout) !== 'Unknown') {
+            $stdoutMeta = stream_get_meta_data($this->stdout);
+            if ($stdoutMeta['uri'] !== 'php://stdout') {
+                fclose($this->stdout);
+            }
         }
         
         // Clear session

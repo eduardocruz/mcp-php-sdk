@@ -48,8 +48,11 @@ class Tool
 
     /**
      * Execute the tool with the given parameters
+     *
+     * @param array<string, mixed> $params The parameters to pass to the tool
+     * @return mixed The result of the tool execution
      */
-    public function execute(array $params)
+    public function execute(array $params): mixed
     {
         return ($this->handler)($params);
     }

@@ -20,15 +20,15 @@ class ErrorResponseBuilder
      * MCP-specific error codes extending JSON-RPC 2.0
      */
     public const ERROR_CODE_TOOL_NOT_FOUND = -32001;
-    public const ERROR_CODE_TOOL_EXECUTION_ERROR = -32002;
-    public const ERROR_CODE_RESOURCE_NOT_FOUND = -32003;
-    public const ERROR_CODE_RESOURCE_ERROR = -32004;
-    public const ERROR_CODE_PROMPT_NOT_FOUND = -32005;
-    public const ERROR_CODE_PROMPT_ERROR = -32006;
-    public const ERROR_CODE_VALIDATION_ERROR = -32007;
-    public const ERROR_CODE_SUBSCRIPTION_ERROR = -32008;
-    public const ERROR_CODE_TRANSPORT_ERROR = -32009;
-    public const ERROR_CODE_SESSION_ERROR = -32010;
+    public const ERROR_CODE_TOOL_EXECUTION_ERROR = -32012;
+    public const ERROR_CODE_RESOURCE_NOT_FOUND = -32013;
+    public const ERROR_CODE_RESOURCE_ERROR = -32014;
+    public const ERROR_CODE_PROMPT_NOT_FOUND = -32015;
+    public const ERROR_CODE_PROMPT_ERROR = -32016;
+    public const ERROR_CODE_VALIDATION_ERROR = -32017;
+    public const ERROR_CODE_SUBSCRIPTION_ERROR = -32018;
+    public const ERROR_CODE_TRANSPORT_ERROR = -32019;
+    public const ERROR_CODE_SESSION_ERROR = -32020;
     
     // Alias for Constants::ERROR_CODE_INTERNAL_ERROR for convenience
     public const ERROR_CODE_INTERNAL_ERROR = Constants::ERROR_CODE_INTERNAL_ERROR;

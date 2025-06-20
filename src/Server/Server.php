@@ -564,6 +564,7 @@ class Server
      * @param string $message The error message
      * @param mixed $data Additional error data
      * @return void
+     * @phpstan-ignore-next-line method.unused
      */
     private function sendErrorResponse(Request $request, int $code, string $message, mixed $data = null): void
     {
@@ -770,7 +771,17 @@ class Server
     {
         // Use reflection to check if the handler accepts a cancellation token
         try {
-            $reflection = new \ReflectionFunction($handler);
+            // Handle both closures and callable strings/arrays
+            if ($handler instanceof \Closure) {
+                $reflection = new \ReflectionFunction($handler);
+            } elseif (is_string($handler) && function_exists($handler)) {
+                $reflection = new \ReflectionFunction($handler);
+            } elseif (is_array($handler) && count($handler) === 2) {
+                $reflection = new \ReflectionMethod($handler[0], $handler[1]);
+            } else {
+                // For other callable types, skip reflection and use single parameter
+                return $handler($request);
+            }
             $parameters = $reflection->getParameters();
             
             // If handler has 2+ parameters and the second one is CancellationToken, pass it

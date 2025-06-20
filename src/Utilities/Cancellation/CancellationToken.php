@@ -121,11 +121,11 @@ class CancellationToken
      * Create a new cancellation token that is already cancelled.
      *
      * @param string|null $reason Optional reason for cancellation
-     * @return static A cancelled token
+     * @return self A cancelled token
      */
-    public static function cancelled(?string $reason = null): static
+    public static function cancelled(?string $reason = null): self
     {
-        $token = new static();
+        $token = new self();
         $token->cancel($reason);
         return $token;
     }
@@ -133,11 +133,11 @@ class CancellationToken
     /**
      * Create a new cancellation token that is not cancelled.
      *
-     * @return static A new token
+     * @return self A new token
      */
-    public static function none(): static
+    public static function none(): self
     {
-        return new static();
+        return new self();
     }
     
     /**
@@ -145,11 +145,11 @@ class CancellationToken
      *
      * @param float $timeoutSeconds Timeout in seconds
      * @param string|null $reason Optional reason for cancellation
-     * @return static A token that will be cancelled after the timeout
+     * @return self A token that will be cancelled after the timeout
      */
-    public static function timeout(float $timeoutSeconds, ?string $reason = null): static
+    public static function timeout(float $timeoutSeconds, ?string $reason = null): self
     {
-        $token = new static();
+        $token = new self();
         
         // Note: In a real implementation, you would use an event loop or timer
         // For now, this is a placeholder that would need to be integrated with
