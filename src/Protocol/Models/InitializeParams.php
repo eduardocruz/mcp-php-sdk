@@ -30,7 +30,7 @@ class InitializeParams
         return [
             'protocolVersion' => $this->protocolVersion,
             'capabilities' => $this->capabilities->toArray(),
-            'client' => $this->clientInfo->toArray(),
+            'clientInfo' => $this->clientInfo->toArray(),
         ];
     }
     
@@ -45,7 +45,7 @@ class InitializeParams
         return new self(
             $data['protocolVersion'],
             ClientCapabilities::fromArray($data['capabilities'] ?? []),
-            Implementation::fromArray($data['client'])
+            Implementation::fromArray($data['clientInfo'] ?? $data['client'] ?? [])
         );
     }
 }

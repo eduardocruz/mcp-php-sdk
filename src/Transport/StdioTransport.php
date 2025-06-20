@@ -90,6 +90,11 @@ class StdioTransport implements TransportInterface
         ?LoggerInterface $logger = null,
         ?SessionManager $sessionManager = null
     ) {
+        // Redirect PHP errors to stderr to prevent contaminating stdout
+        ini_set('display_errors', '0');
+        ini_set('log_errors', '1');
+        ini_set('error_log', 'php://stderr');
+        
         $this->stdin = $stdin ?? fopen('php://stdin', 'r');
         $this->stdout = $stdout ?? fopen('php://stdout', 'w');
         $this->logger = $logger ?? new ConsoleLogger();
