@@ -320,14 +320,18 @@ class StdioTransport implements TransportInterface
         // Close streams if not the default ones
         if (is_resource($this->stdin) && get_resource_type($this->stdin) !== 'Unknown') {
             $stdinMeta = stream_get_meta_data($this->stdin);
-            if ($stdinMeta['uri'] !== 'php://stdin') {
+            // @phpstan-ignore-next-line
+            $stdinUri = $stdinMeta['uri'] ?? '';
+            if ($stdinUri !== 'php://stdin') {
                 fclose($this->stdin);
             }
         }
 
         if (is_resource($this->stdout) && get_resource_type($this->stdout) !== 'Unknown') {
             $stdoutMeta = stream_get_meta_data($this->stdout);
-            if ($stdoutMeta['uri'] !== 'php://stdout') {
+            // @phpstan-ignore-next-line
+            $stdoutUri = $stdoutMeta['uri'] ?? '';
+            if ($stdoutUri !== 'php://stdout') {
                 fclose($this->stdout);
             }
         }
