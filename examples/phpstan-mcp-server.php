@@ -15,10 +15,11 @@ use ModelContextProtocol\Transport\StdioTransport;
 // Create an MCP server instance
 $server = new McpServer('PHPStan-MCP-Server', '1.0.0');
 
-// Enable capabilities for tools, resources, and prompts
+// Enable capabilities for tools, resources, prompts, and logging
 $server->registerToolCapabilities(true);
 $server->registerResourceCapabilities(true, true);
 $server->registerPromptCapabilities(true);
+$server->registerLoggingCapabilities();
 
 // Register a static resource for server information
 $server->registerResource(

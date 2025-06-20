@@ -169,6 +169,16 @@ class McpServer
     }
     
     /**
+     * Get the logger instance.
+     *
+     * @return LoggerInterface The logger instance
+     */
+    public function getLogger(): LoggerInterface
+    {
+        return $this->logger;
+    }
+    
+    /**
      * Attaches to the given transport, starts it, and starts listening for messages.
      *
      * The server object assumes ownership of the Transport, replacing any callbacks
@@ -628,6 +638,51 @@ class McpServer
     }
     
     /**
+     * Handle logging/setLevel request.
+     *
+     * @param array<string, mixed> $request The request data
+     * @return array<string, mixed> The response data
+     */
+    public function handleLoggingSetLevel(array $request): array
+    {
+        $params = $request['params'] ?? [];
+        $level = $params['level'] ?? null;
+        
+        // Validate level parameter
+        if (!is_string($level) || empty($level)) {
+            return ErrorResponseBuilder::createErrorArray(
+                \ModelContextProtocol\Protocol\Constants::ERROR_CODE_INVALID_PARAMS,
+                'Missing or invalid "level" parameter'
+            );
+        }
+        
+        // Check if logger supports dynamic level changes
+        if (!method_exists($this->logger, 'setLevel')) {
+            return ErrorResponseBuilder::createErrorArray(
+                \ModelContextProtocol\Protocol\Constants::ERROR_CODE_INTERNAL_ERROR,
+                'Logger does not support dynamic level changes'
+            );
+        }
+        
+        // Attempt to set the log level
+        $success = $this->logger->setLevel($level);
+        
+        if (!$success) {
+            return ErrorResponseBuilder::createErrorArray(
+                \ModelContextProtocol\Protocol\Constants::ERROR_CODE_INVALID_PARAMS,
+                "Invalid log level: '$level'. Valid levels are: " . 
+                implode(', ', \ModelContextProtocol\Utilities\Logging\ConsoleLogger::getAvailableLevels())
+            );
+        }
+        
+        // Log the level change
+        $this->logger->info("Log level changed to: $level");
+        
+        // Return empty success response
+        return [];
+    }
+    
+    /**
      * Register capabilities for resource support.
      *
      * @param bool $listChanged Whether the server supports notifying about resource list changes
@@ -682,6 +737,17 @@ class McpServer
     public function registerLoggingCapabilities(): void
     {
         $this->server->registerCapabilities(new ServerCapabilities(logging: []));
+        $this->setLoggingRequestHandlers();
+    }
+    
+    /**
+     * Set up logging request handlers.
+     *
+     * @return void
+     */
+    private function setLoggingRequestHandlers(): void
+    {
+        $this->server->setRequestHandler('logging/setLevel', [$this, 'handleLoggingSetLevel']);
     }
     
     /**

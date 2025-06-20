@@ -56,6 +56,55 @@ class ConsoleLogger implements LoggerInterface
     }
     
     /**
+     * Set the minimum log level dynamically.
+     *
+     * @param string $level The new minimum log level
+     * @return bool True if the level was set successfully, false if invalid
+     */
+    public function setLevel(string $level): bool
+    {
+        $level = strtolower($level);
+        
+        if (!isset(self::LOG_LEVELS[$level])) {
+            return false;
+        }
+        
+        $this->minLevel = $level;
+        return true;
+    }
+    
+    /**
+     * Get the current minimum log level.
+     *
+     * @return string The current minimum log level
+     */
+    public function getLevel(): string
+    {
+        return $this->minLevel;
+    }
+    
+    /**
+     * Get all available log levels.
+     *
+     * @return array<string> Array of available log level names
+     */
+    public static function getAvailableLevels(): array
+    {
+        return array_keys(self::LOG_LEVELS);
+    }
+    
+    /**
+     * Check if a log level is valid.
+     *
+     * @param string $level The log level to validate
+     * @return bool True if the level is valid
+     */
+    public static function isValidLevel(string $level): bool
+    {
+        return isset(self::LOG_LEVELS[strtolower($level)]);
+    }
+    
+    /**
      * {@inheritdoc}
      */
     public function emergency(string $message, array $context = []): void
