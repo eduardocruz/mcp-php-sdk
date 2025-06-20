@@ -2,6 +2,7 @@
 
 namespace ModelContextProtocol\Server\Tools;
 
+use ModelContextProtocol\Protocol\Notifications\NotificationManager;
 use ModelContextProtocol\Server\Tools\Schema\ToolSchema;
 use ModelContextProtocol\Server\Tools\Schema\Validator;
 use ModelContextProtocol\Server\Tools\Schema\ValidationException;
@@ -16,11 +17,27 @@ class ToolManager
     private Validator $validator;
     
     /**
+     * @var NotificationManager|null The notification manager for sending notifications
+     */
+    private ?NotificationManager $notificationManager = null;
+    
+    /**
      * Create a new tool manager
      */
     public function __construct()
     {
         $this->validator = new Validator();
+    }
+    
+    /**
+     * Set the notification manager for sending automatic notifications.
+     *
+     * @param NotificationManager|null $notificationManager The notification manager
+     * @return void
+     */
+    public function setNotificationManager(?NotificationManager $notificationManager): void
+    {
+        $this->notificationManager = $notificationManager;
     }
     
     /**
@@ -43,6 +60,11 @@ class ToolManager
         
         $tool = new Tool($name, $schema, $handler);
         $this->tools[$name] = $tool;
+        
+        // Send tools list changed notification if notification manager is available
+        if ($this->notificationManager !== null) {
+            $this->notificationManager->sendToolsListChanged();
+        }
         
         return $tool;
     }
@@ -127,6 +149,12 @@ class ToolManager
     {
         if (isset($this->tools[$name])) {
             unset($this->tools[$name]);
+            
+            // Send tools list changed notification if notification manager is available
+            if ($this->notificationManager !== null) {
+                $this->notificationManager->sendToolsListChanged();
+            }
+            
             return true;
         }
         

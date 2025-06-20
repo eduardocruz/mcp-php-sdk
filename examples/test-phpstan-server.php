@@ -33,10 +33,29 @@ $listToolsRequest = [
     'params' => []
 ];
 
-// 3. Let's execute the phpstan-analyze tool with a simple PHP code that has errors
+// 3. Let's execute the phpstan-analyze tool on the project files
 $analyzeRequest = [
     'jsonrpc' => '2.0',
     'id' => 3,
+    'method' => 'tools/call',
+    'params' => [
+        'name' => 'phpstan-analyze',
+        'params' => [
+            // Use current working directory as project path
+            'projectPath' => getcwd(),
+            // Analyze the src directory
+            'paths' => ['src'],
+            // Set analysis level
+            'level' => 5,
+            'showProgressBar' => false
+        ]
+    ]
+];
+
+// 3b. Let's also execute the phpstan-analyze tool with a code snippet that has errors
+$analyzeCodeRequest = [
+    'jsonrpc' => '2.0',
+    'id' => 3.5,
     'method' => 'tools/call',
     'params' => [
         'name' => 'phpstan-analyze',
@@ -170,10 +189,15 @@ echo "Test 2: List tools request\n";
 $listResponse = sendRequest($listToolsRequest);
 echo "Response: " . json_encode($listResponse, JSON_PRETTY_PRINT) . "\n\n";
 
-// Test 3: Run PHPStan analysis
-echo "Test 3: PHPStan analysis\n";
+// Test 3: Run PHPStan analysis on project
+echo "Test 3: PHPStan project analysis\n";
 $analyzeResponse = sendRequest($analyzeRequest);
 echo "Response: " . json_encode($analyzeResponse, JSON_PRETTY_PRINT) . "\n\n";
+
+// Test 3b: Run PHPStan analysis on code snippet
+echo "Test 3b: PHPStan code snippet analysis\n";
+$analyzeCodeResponse = sendRequest($analyzeCodeRequest);
+echo "Response: " . json_encode($analyzeCodeResponse, JSON_PRETTY_PRINT) . "\n\n";
 
 // Test 4: Check code quality
 echo "Test 4: Code quality check\n";

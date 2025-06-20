@@ -13,6 +13,7 @@ use ModelContextProtocol\Protocol\Models\Implementation;
 use ModelContextProtocol\Protocol\Models\InitializeParams;
 use ModelContextProtocol\Protocol\Models\InitializeResult;
 use ModelContextProtocol\Protocol\Models\ServerCapabilities;
+use ModelContextProtocol\Protocol\Notifications\NotificationManager;
 use ModelContextProtocol\Transport\Exception\ConnectionException;
 use ModelContextProtocol\Transport\TransportInterface;
 use ModelContextProtocol\Utilities\Logging\LoggerInterface;
@@ -72,6 +73,11 @@ class Server
     private LoggerInterface $logger;
     
     /**
+     * @var NotificationManager The notification manager
+     */
+    private NotificationManager $notificationManager;
+    
+    /**
      * Constructor.
      *
      * @param Implementation $serverInfo Information about the server implementation
@@ -87,10 +93,13 @@ class Server
     ) {
         $this->capabilities = $capabilities ?? new ServerCapabilities();
         $this->logger = $logger ?? new ConsoleLogger();
+        $this->notificationManager = new NotificationManager($this->logger);
         
         // Register built-in handlers
         $this->setRequestHandler('initialize', [$this, 'handleInitialize']);
         $this->setRequestHandler('ping', [$this, 'handlePing']);
+        $this->setRequestHandler('resources/subscribe', [$this, 'handleResourceSubscribe']);
+        $this->setRequestHandler('resources/unsubscribe', [$this, 'handleResourceUnsubscribe']);
         $this->setNotificationHandler('notifications/initialized', [$this, 'handleInitialized']);
         $this->setNotificationHandler('notifications/cancelled', [$this, 'handleCancelled']);
     }
@@ -139,6 +148,9 @@ class Server
         $transport->onError([$this, 'handleError']);
         $transport->onClose([$this, 'handleClose']);
         
+        // Connect notification manager to transport
+        $this->notificationManager->setTransport($transport);
+        
         // Start the transport
         $transport->start();
         
@@ -158,6 +170,11 @@ class Server
     {
         if ($this->transport !== null) {
             $this->logger->info('Closing server connection');
+            
+            // Disconnect notification manager
+            $this->notificationManager->setTransport(null);
+            $this->notificationManager->clearQueue();
+            
             $this->transport->close();
             $this->transport = null;
         }
@@ -398,6 +415,54 @@ class Server
     }
     
     /**
+     * Handler for the 'resources/subscribe' request.
+     *
+     * @param Request $request The subscribe request
+     * @return array<string, mixed> Empty result
+     */
+    public function handleResourceSubscribe(Request $request): array
+    {
+        $uri = $request->params['uri'] ?? null;
+        
+        if ($uri === null) {
+            throw new \InvalidArgumentException('Missing required parameter: uri');
+        }
+        
+        $options = $request->params['options'] ?? [];
+        $this->notificationManager->subscribeToResource($uri, $options);
+        
+        $this->logger->info('Resource subscription added', [
+            'uri' => $uri,
+            'options' => $options
+        ]);
+        
+        return [];
+    }
+    
+    /**
+     * Handler for the 'resources/unsubscribe' request.
+     *
+     * @param Request $request The unsubscribe request
+     * @return array<string, mixed> Empty result
+     */
+    public function handleResourceUnsubscribe(Request $request): array
+    {
+        $uri = $request->params['uri'] ?? null;
+        
+        if ($uri === null) {
+            throw new \InvalidArgumentException('Missing required parameter: uri');
+        }
+        
+        $this->notificationManager->unsubscribeFromResource($uri);
+        
+        $this->logger->info('Resource subscription removed', [
+            'uri' => $uri
+        ]);
+        
+        return [];
+    }
+    
+    /**
      * Send a response to a request.
      *
      * @param Request $request The request to respond to
@@ -488,6 +553,16 @@ class Server
                 'exception' => get_class($e)
             ]);
         }
+    }
+    
+    /**
+     * Get the notification manager.
+     *
+     * @return NotificationManager The notification manager
+     */
+    public function getNotificationManager(): NotificationManager
+    {
+        return $this->notificationManager;
     }
     
     /**

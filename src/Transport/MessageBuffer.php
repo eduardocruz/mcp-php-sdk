@@ -9,7 +9,7 @@ use ModelContextProtocol\Protocol\Messages\Notification;
 use InvalidArgumentException;
 
 /**
- * Buffers a continuous stream into discrete JSON-RPC messages.
+ * Buffers a continuous stream into discrete JSON-RPC messages using LSP-style Content-Length headers.
  */
 class MessageBuffer
 {
@@ -37,23 +37,55 @@ class MessageBuffer
      */
     public function readMessage(): ?JsonRpcMessage
     {
-        // Look for a newline separator
-        $newlinePos = strpos($this->buffer, "\n");
-        if ($newlinePos === false) {
+        // Look for the header separator (double CRLF)
+        $headerEnd = strpos($this->buffer, "\r\n\r\n");
+        if ($headerEnd === false) {
             return null;
         }
         
-        // Extract the line and update the buffer
-        $line = substr($this->buffer, 0, $newlinePos);
-        $this->buffer = substr($this->buffer, $newlinePos + 1);
+        // Extract headers
+        $headers = substr($this->buffer, 0, $headerEnd);
+        $contentLength = $this->parseContentLength($headers);
         
-        // Remove any trailing \r (for Windows-style line endings)
-        if (substr($line, -1) === "\r") {
-            $line = substr($line, 0, -1);
+        if ($contentLength === null) {
+            throw new InvalidArgumentException('Missing Content-Length header');
         }
         
+        // Check if we have the complete message body
+        $bodyStart = $headerEnd + 4; // Skip past "\r\n\r\n"
+        $totalLength = $bodyStart + $contentLength;
+        
+        if (strlen($this->buffer) < $totalLength) {
+            return null; // Not enough data yet
+        }
+        
+        // Extract the message body
+        $messageBody = substr($this->buffer, $bodyStart, $contentLength);
+        
+        // Update the buffer by removing the processed message
+        $this->buffer = substr($this->buffer, $totalLength);
+        
         // Deserialize the message
-        return $this->deserializeMessage($line);
+        return $this->deserializeMessage($messageBody);
+    }
+    
+    /**
+     * Parse the Content-Length from LSP headers.
+     *
+     * @param string $headers The header string
+     * @return int|null The content length or null if not found
+     */
+    private function parseContentLength(string $headers): ?int
+    {
+        $lines = explode("\r\n", $headers);
+        
+        foreach ($lines as $line) {
+            if (preg_match('/^Content-Length:\s*(\d+)$/i', $line, $matches)) {
+                return (int)$matches[1];
+            }
+        }
+        
+        return null;
     }
     
     /**
@@ -69,14 +101,14 @@ class MessageBuffer
     /**
      * Deserialize a JSON-RPC message from a string.
      *
-     * @param string $line The JSON string to deserialize
+     * @param string $messageBody The JSON string to deserialize
      * @return JsonRpcMessage The parsed message
      * @throws InvalidArgumentException If the message is invalid or cannot be parsed
      */
-    private function deserializeMessage(string $line): JsonRpcMessage
+    private function deserializeMessage(string $messageBody): JsonRpcMessage
     {
         try {
-            $data = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+            $data = json_decode($messageBody, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
             throw new InvalidArgumentException('Invalid JSON in message: ' . $e->getMessage(), 0, $e);
         }
@@ -103,13 +135,16 @@ class MessageBuffer
     }
     
     /**
-     * Serialize a JSON-RPC message to a string.
+     * Serialize a JSON-RPC message to a string with LSP-style headers.
      *
      * @param JsonRpcMessage $message The message to serialize
-     * @return string The serialized message with a newline appended
+     * @return string The serialized message with Content-Length header
      */
     public static function serializeMessage(JsonRpcMessage $message): string
     {
-        return json_encode($message->toArray(), JSON_THROW_ON_ERROR) . "\n";
+        $json = json_encode($message->toArray(), JSON_THROW_ON_ERROR);
+        $contentLength = strlen($json);
+        
+        return "Content-Length: {$contentLength}\r\n\r\n{$json}";
     }
 }
