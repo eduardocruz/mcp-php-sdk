@@ -147,6 +147,7 @@ class CancellationToken
      * @param float $timeoutSeconds Timeout in seconds
      * @param string|null $reason Optional reason for cancellation
      * @return self A token that will be cancelled after the timeout
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public static function timeout(float $timeoutSeconds, ?string $reason = null): self
     {

@@ -745,10 +745,10 @@ class McpServer
             // Return the content directly as expected by MCP protocol
             if (isset($result['content'])) {
                 return ['content' => $result['content']];
-            } else {
-                // If no content array, wrap the whole result
-                return ['content' => [$result]];
             }
+            
+            // If no content array, wrap the whole result
+            return ['content' => [$result]];
         } catch (\Exception $e) {
             return ErrorResponseBuilder::createErrorArray(
                 ErrorResponseBuilder::ERROR_CODE_RESOURCE_ERROR,

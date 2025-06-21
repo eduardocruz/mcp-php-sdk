@@ -214,13 +214,17 @@ class Server
         try {
             if ($message instanceof Request) {
                 $this->handleRequest($message);
-            } elseif ($message instanceof Notification) {
-                $this->handleNotification($message);
-            } else {
-                $this->logger->warning('Received unsupported message type', [
-                    'messageType' => get_class($message)
-                ]);
+                return;
             }
+            
+            if ($message instanceof Notification) {
+                $this->handleNotification($message);
+                return;
+            }
+            
+            $this->logger->warning('Received unsupported message type', [
+                'messageType' => get_class($message)
+            ]);
         } catch (Throwable $e) {
             $this->logger->error('Error handling message', [
                 'error' => $e->getMessage(),
@@ -417,6 +421,7 @@ class Server
      *
      * @param Notification $notification The initialized notification
      * @return void
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function handleInitialized(Notification $notification): void
     {
