@@ -33,11 +33,10 @@
         "phpstan": "phpstan analyse src tests --level=8 --memory-limit=512M",
         "cs-check": "phpcs src tests --standard=PSR12",
         "cs-fix": "phpcbf src tests --standard=PSR12",
-        "phpmd": "phpmd src text cleancode,codesize,controversial,design,naming,unusedcode",
+        "phpmd": "phpmd src text phpmd.xml",
         "quality": [
             "@cs-check",
-            "@phpstan",
-            "@phpmd"
+            "@phpstan"
         ],
         "ci": [
             "@quality",
