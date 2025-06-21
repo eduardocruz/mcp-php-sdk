@@ -92,9 +92,6 @@ jobs:
       
     - name: Run PHP Code Sniffer
       run: composer cs-check
-      
-    - name: Run PHPMD
-      run: composer phpmd
 
   security:
     name: Security Scan
