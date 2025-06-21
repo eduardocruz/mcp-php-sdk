@@ -318,9 +318,9 @@ class Server
                 $this->sendRawResponse($response);
             } finally {
                 // Unregister the request when done
-                            if (is_string($request->requestId)) {
-                $this->cancellationManager->unregisterRequest($request->requestId);
-            }
+                if (is_string($request->requestId)) {
+                    $this->cancellationManager->unregisterRequest($request->requestId);
+                }
             }
         } else {
             $this->logger->warning('Method not found', ['method' => $method]);

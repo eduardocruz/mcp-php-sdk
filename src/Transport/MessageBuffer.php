@@ -122,11 +122,12 @@ class MessageBuffer
             if (isset($data['id'])) {
                 // It's a request
                 return Request::fromArray($data);
-            } else {
-                // It's a notification
-                return Notification::fromArray($data);
             }
-        } elseif (isset($data['id'])) {
+            // It's a notification
+            return Notification::fromArray($data);
+        }
+
+        if (isset($data['id'])) {
             // It's a response (either successful or error)
             return Response::fromArray($data);
         }

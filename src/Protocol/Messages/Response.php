@@ -16,7 +16,7 @@ class Response extends JsonRpcMessage
     /**
      * Constructor.
      *
-     * @param string|int $id The response identifier. Must match the request ID.
+     * @param string|int $responseId The response identifier. Must match the request ID.
      * @param array<string, mixed>|null $result The result of the request. Null if an error occurred.
      * @param ErrorData|null $error Error data if an error occurred. Null if the request succeeded.
      *

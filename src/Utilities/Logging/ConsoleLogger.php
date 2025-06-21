@@ -60,13 +60,14 @@ class ConsoleLogger implements LoggerInterface
                 throw new RuntimeException('Error output must be a valid resource');
             }
             $this->errorOutput = $errorOutput;
-        } else {
-            $errorResource = fopen('php://stderr', 'w');
-            if ($errorResource === false) {
-                throw new RuntimeException('Failed to open error output stream');
-            }
-            $this->errorOutput = $errorResource;
+            return;
         }
+
+        $errorResource = fopen('php://stderr', 'w');
+        if ($errorResource === false) {
+            throw new RuntimeException('Failed to open error output stream');
+        }
+        $this->errorOutput = $errorResource;
     }
 
     /**

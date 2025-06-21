@@ -99,9 +99,10 @@ class CancellationToken
             } catch (\Throwable $e) {
                 error_log("Error in cancellation callback: " . $e->getMessage());
             }
-        } else {
-            $this->callbacks[] = $callback;
+            return;
         }
+
+        $this->callbacks[] = $callback;
     }
 
     /**

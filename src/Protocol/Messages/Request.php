@@ -15,7 +15,7 @@ class Request extends JsonRpcMessage
     /**
      * Constructor.
      *
-     * @param string|int $id The request identifier. Must not be null.
+     * @param string|int $requestId The request identifier. Must not be null.
      * @param string $method The method to be invoked.
      * @param array<string, mixed>|null $params The parameters to pass to the method.
      *
@@ -26,7 +26,7 @@ class Request extends JsonRpcMessage
         public string $method,
         public ?array $params = null
     ) {
-        // No validation needed - PHP type system ensures $id is string|int
+        // No validation needed - PHP type system ensures $requestId is string|int
     }
 
     /**
