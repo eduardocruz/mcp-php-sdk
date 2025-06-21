@@ -28,7 +28,7 @@ class CancellationManager
     /**
      * @var callable|null Global cancellation callback
      */
-    private $globalCancellationCallback = null;
+    private $globalCallback = null;
 
     /**
      * Constructor.
@@ -117,9 +117,9 @@ class CancellationManager
         $token->cancel($reason);
 
         // Execute global cancellation callback if set
-        if ($this->globalCancellationCallback !== null) {
+        if ($this->globalCallback !== null) {
             try {
-                ($this->globalCancellationCallback)($requestId, $token, $metadata);
+                ($this->globalCallback)($requestId, $token, $metadata);
             } catch (\Throwable $e) {
                 $this->logger->error('Error in global cancellation callback', [
                     'error' => $e->getMessage(),
@@ -221,7 +221,7 @@ class CancellationManager
      */
     public function setGlobalCancellationCallback(?callable $callback): void
     {
-        $this->globalCancellationCallback = $callback;
+        $this->globalCallback = $callback;
     }
 
     /**

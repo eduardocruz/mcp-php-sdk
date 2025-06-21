@@ -64,17 +64,17 @@ class McpServer
     /**
      * @var bool Whether tool handlers have been initialized
      */
-    private bool $toolHandlersInitialized = false;
+    private bool $toolHandlersInit = false;
 
     /**
      * @var bool Whether resource handlers have been initialized
      */
-    private bool $resourceHandlersInitialized = false;
+    private bool $resourceHandlersInit = false;
 
     /**
      * @var bool Whether prompt handlers have been initialized
      */
-    private bool $promptHandlersInitialized = false;
+    private bool $promptHandlersInit = false;
 
     /**
      * @var HealthMonitor The health monitor for connection monitoring
@@ -523,7 +523,7 @@ class McpServer
      */
     private function setToolRequestHandlers(): void
     {
-        if ($this->toolHandlersInitialized) {
+        if ($this->toolHandlersInit) {
             return;
         }
 
@@ -536,7 +536,7 @@ class McpServer
         $this->server->setRequestHandler('tools/list', [$this, 'handleToolsList']);
         $this->server->setRequestHandler('tools/call', [$this, 'handleToolsCall']);
 
-        $this->toolHandlersInitialized = true;
+        $this->toolHandlersInit = true;
     }
 
     /**
@@ -546,7 +546,7 @@ class McpServer
      */
     private function setResourceRequestHandlers(): void
     {
-        if ($this->resourceHandlersInitialized) {
+        if ($this->resourceHandlersInit) {
             return;
         }
 
@@ -560,7 +560,7 @@ class McpServer
         $this->server->setRequestHandler('resources/templates/list', [$this, 'handleResourceTemplatesList']);
         $this->server->setRequestHandler('resources/read', [$this, 'handleResourceRead']);
 
-        $this->resourceHandlersInitialized = true;
+        $this->resourceHandlersInit = true;
     }
 
     /**
@@ -570,7 +570,7 @@ class McpServer
      */
     private function setPromptRequestHandlers(): void
     {
-        if ($this->promptHandlersInitialized) {
+        if ($this->promptHandlersInit) {
             return;
         }
 
@@ -583,7 +583,7 @@ class McpServer
         $this->server->setRequestHandler('prompts/list', [$this, 'handlePromptsList']);
         $this->server->setRequestHandler('prompts/get', [$this, 'handlePromptGet']);
 
-        $this->promptHandlersInitialized = true;
+        $this->promptHandlersInit = true;
     }
 
     /**
@@ -591,6 +591,7 @@ class McpServer
      *
      * @param mixed $request The request object
      * @return array<string, mixed> The response data
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function handleToolsList($request): array
     {
@@ -666,6 +667,7 @@ class McpServer
      *
      * @param mixed $request The request object
      * @return array<string, mixed> The response data
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function handleResourcesList($request): array
     {
@@ -678,6 +680,7 @@ class McpServer
      *
      * @param mixed $request The request object
      * @return array<string, mixed> The response data
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function handleResourceTemplatesList($request): array
     {
@@ -760,6 +763,7 @@ class McpServer
      *
      * @param mixed $request The request object
      * @return array<string, mixed> The response data
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function handlePromptsList($request): array
     {

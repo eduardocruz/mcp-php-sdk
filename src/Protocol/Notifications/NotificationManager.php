@@ -28,7 +28,7 @@ class NotificationManager
     /**
      * @var array<string, array<string, mixed>> Resource subscriptions by URI
      */
-    private array $resourceSubscriptions = [];
+    private array $resourceSubs = [];
 
     /**
      * @var array<Notification> Queued notifications waiting to be sent
@@ -116,7 +116,7 @@ class NotificationManager
     public function sendResourceUpdated(string $uri, array $content = []): void
     {
         // Only send if there are subscribers to this resource
-        if (!isset($this->resourceSubscriptions[$uri])) {
+        if (!isset($this->resourceSubs[$uri])) {
             return;
         }
 
@@ -160,7 +160,7 @@ class NotificationManager
      */
     public function subscribeToResource(string $uri, array $options = []): void
     {
-        $this->resourceSubscriptions[$uri] = $options;
+        $this->resourceSubs[$uri] = $options;
 
         $this->logger->debug('Subscribed to resource updates', [
             'uri' => $uri,
@@ -176,8 +176,8 @@ class NotificationManager
      */
     public function unsubscribeFromResource(string $uri): void
     {
-        if (isset($this->resourceSubscriptions[$uri])) {
-            unset($this->resourceSubscriptions[$uri]);
+        if (isset($this->resourceSubs[$uri])) {
+            unset($this->resourceSubs[$uri]);
 
             $this->logger->debug('Unsubscribed from resource updates', [
                 'uri' => $uri
@@ -192,7 +192,7 @@ class NotificationManager
      */
     public function getResourceSubscriptions(): array
     {
-        return $this->resourceSubscriptions;
+        return $this->resourceSubs;
     }
 
     /**
@@ -203,7 +203,7 @@ class NotificationManager
      */
     public function isSubscribedToResource(string $uri): bool
     {
-        return isset($this->resourceSubscriptions[$uri]);
+        return isset($this->resourceSubs[$uri]);
     }
 
     /**
