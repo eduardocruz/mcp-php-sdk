@@ -8,7 +8,7 @@ namespace ModelContextProtocol\Protocol\Messages;
  * This class defines the common structure and behavior for all message types
  * according to the JSON-RPC 2.0 specification.
  */
-abstract class JsonRpcMessage
+abstract class JsonRpcMessage implements \JsonSerializable
 {
     /**
      * The JSON-RPC 2.0 protocol version.
@@ -38,5 +38,15 @@ abstract class JsonRpcMessage
     public function toJson(): string
     {
         return json_encode($this->toArray(), JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * Specify data which should be serialized to JSON.
+     *
+     * @return array<string, mixed> The data to serialize to JSON.
+     */
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
     }
 }

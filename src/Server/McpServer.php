@@ -233,7 +233,7 @@ class McpServer
         // Convert stdClass to Request object if needed
         if (is_object($request) && !($request instanceof Request)) {
             $requestObj = new Request(
-                $request->id ?? 'test-id',
+                $request->requestId ?? 'test-id',
                 $request->method ?? 'initialize',
                 (array)($request->params ?? [])
             );
@@ -254,7 +254,7 @@ class McpServer
         // Convert stdClass to Request object if needed
         if (is_object($request) && !($request instanceof Request)) {
             $requestObj = new Request(
-                $request->id ?? 'test-id',
+                $request->requestId ?? 'test-id',
                 $request->method ?? 'ping',
                 (array)($request->params ?? [])
             );

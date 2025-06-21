@@ -44,10 +44,10 @@ abstract class TestCase extends PHPUnitTestCase
         $this->assertInstanceOf(Response::class, $response);
 
         if ($expectedId !== null) {
-            $this->assertEquals($expectedId, $response->id);
+            $this->assertEquals($expectedId, $response->responseId);
         }
 
-        $this->assertNotNull($response->id);
+        $this->assertNotNull($response->responseId);
     }
 
     /**

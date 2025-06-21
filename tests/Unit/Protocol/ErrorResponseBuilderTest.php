@@ -25,7 +25,7 @@ class ErrorResponseBuilderTest extends TestCase
             'Invalid parameters provided'
         );
 
-        $this->assertEquals('test-123', $response->id);
+        $this->assertEquals('test-123', $response->responseId);
         $this->assertEquals('2.0', $response->jsonrpc);
         $this->assertNull($response->result);
         $this->assertNotNull($response->error);
@@ -80,7 +80,7 @@ class ErrorResponseBuilderTest extends TestCase
 
         $response = ErrorResponseBuilder::fromException($this->request, $exception);
 
-        $this->assertEquals('test-123', $response->id);
+        $this->assertEquals('test-123', $response->responseId);
 
         $error = $response->error;
         $this->assertNotNull($error);

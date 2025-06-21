@@ -23,7 +23,7 @@ class Response extends JsonRpcMessage
      * @throws InvalidArgumentException If neither result nor error is set, or if both are set.
      */
     public function __construct(
-        public string|int $id,
+        public string|int $responseId,
         public ?array $result = null,
         public ?ErrorData $error = null
     ) {
@@ -41,7 +41,7 @@ class Response extends JsonRpcMessage
     public function toArray(): array
     {
         $result = parent::toArray();
-        $result['id'] = $this->id;
+        $result['id'] = $this->responseId;
 
         if ($this->result !== null) {
             $result['result'] = $this->result;

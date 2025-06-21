@@ -15,7 +15,7 @@ class JsonRpcMessageTest extends TestCase
         $request = new Request('test-123', 'test/method', ['param' => 'value']);
 
         $this->assertEquals('2.0', $request->jsonrpc);
-        $this->assertEquals('test-123', $request->id);
+        $this->assertEquals('test-123', $request->requestId);
         $this->assertEquals('test/method', $request->method);
         $this->assertEquals(['param' => 'value'], $request->params);
     }
@@ -38,7 +38,7 @@ class JsonRpcMessageTest extends TestCase
         $response = new Response('test-123', ['result' => 'success']);
 
         $this->assertEquals('2.0', $response->jsonrpc);
-        $this->assertEquals('test-123', $response->id);
+        $this->assertEquals('test-123', $response->responseId);
         $this->assertEquals(['result' => 'success'], $response->result);
         $this->assertNull($response->error);
     }
@@ -50,7 +50,7 @@ class JsonRpcMessageTest extends TestCase
         $response = new Response('test-123', null, $errorData);
 
         $this->assertEquals('2.0', $response->jsonrpc);
-        $this->assertEquals('test-123', $response->id);
+        $this->assertEquals('test-123', $response->responseId);
         $this->assertNull($response->result);
         $this->assertEquals($errorData, $response->error);
     }

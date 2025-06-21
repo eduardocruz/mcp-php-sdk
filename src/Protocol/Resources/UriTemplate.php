@@ -68,17 +68,17 @@ class UriTemplate
     {
         $parts = [];
         $currentText = "";
-        $i = 0;
+        $index = 0;
         $expressionCount = 0;
 
-        while ($i < strlen($template)) {
-            if ($template[$i] === "{") {
+        while ($index < strlen($template)) {
+            if ($template[$index] === "{") {
                 if ($currentText) {
                     $parts[] = $currentText;
                     $currentText = "";
                 }
 
-                $end = strpos($template, "}", $i);
+                $end = strpos($template, "}", $index);
                 if ($end === false) {
                     throw new InvalidArgumentException("Unclosed template expression");
                 }
@@ -90,7 +90,7 @@ class UriTemplate
                     );
                 }
 
-                $expr = substr($template, $i + 1, $end - $i - 1);
+                $expr = substr($template, $index + 1, $end - $index - 1);
                 $operator = $this->getOperator($expr);
                 $exploded = str_contains($expr, "*");
                 $names = $this->getNames($expr);
@@ -108,10 +108,10 @@ class UriTemplate
                     'exploded' => $exploded
                 ];
 
-                $i = $end + 1;
+                $index = $end + 1;
             } else {
-                $currentText .= $template[$i];
-                $i++;
+                $currentText .= $template[$index];
+                $index++;
             }
         }
 
@@ -183,7 +183,7 @@ class UriTemplate
 
                 $value = $variables[$name];
                 if (is_array($value)) {
-                    $encoded = implode(',', array_map(fn($v) => $this->encodeValue($v, $part['operator']), $value));
+                    $encoded = implode(',', array_map(fn($val) => $this->encodeValue($val, $part['operator']), $value));
                 } else {
                     $encoded = $this->encodeValue((string)$value, $part['operator']);
                 }
@@ -226,7 +226,7 @@ class UriTemplate
 
         $value = $variables[$name];
         $values = is_array($value) ? $value : [$value];
-        $encoded = array_map(fn($v) => $this->encodeValue((string)$v, $part['operator']), $values);
+        $encoded = array_map(fn($val) => $this->encodeValue((string)$val, $part['operator']), $values);
 
         switch ($part['operator']) {
             case '':

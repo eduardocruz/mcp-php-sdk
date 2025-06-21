@@ -266,7 +266,7 @@ class Server
 
         $this->logger->debug('Handling request', [
             'method' => $method,
-            'id' => $request->id
+            'id' => $request->requestId
         ]);
 
         if (!$this->initialized && $method !== 'initialize') {
@@ -282,8 +282,8 @@ class Server
         if (isset($this->requestHandlers[$method])) {
             // Register request for cancellation tracking if it has an ID
             $cancellationToken = null;
-            if (is_string($request->id)) {
-                $cancellationToken = $this->cancellationManager->registerRequest($request->id, [
+            if (is_string($request->requestId)) {
+                $cancellationToken = $this->cancellationManager->registerRequest($request->requestId, [
                     'method' => $method,
                     'startedAt' => microtime(true)
                 ]);
@@ -318,9 +318,9 @@ class Server
                 $this->sendRawResponse($response);
             } finally {
                 // Unregister the request when done
-                if (is_string($request->id)) {
-                    $this->cancellationManager->unregisterRequest($request->id);
-                }
+                            if (is_string($request->requestId)) {
+                $this->cancellationManager->unregisterRequest($request->requestId);
+            }
             }
         } else {
             $this->logger->warning('Method not found', ['method' => $method]);
@@ -436,8 +436,8 @@ class Server
     public function handlePing(Request $request): array
     {
         // Notify health monitor if available
-        if ($this->healthMonitor !== null && is_string($request->id)) {
-            $this->healthMonitor->handlePingResponse($request->id);
+        if ($this->healthMonitor !== null && is_string($request->requestId)) {
+            $this->healthMonitor->handlePingResponse($request->requestId);
         }
 
         return [];
@@ -537,7 +537,7 @@ class Server
             return;
         }
 
-        $response = new Response($request->id, $result);
+        $response = new Response($request->requestId, $result);
         $this->sendRawResponse($response);
     }
 
@@ -582,7 +582,7 @@ class Server
         }
 
         $error = new ErrorData($code, $message, $data);
-        $response = new Response($request->id, null, $error);
+        $response = new Response($request->requestId, null, $error);
 
         try {
             $this->transport->send($response);

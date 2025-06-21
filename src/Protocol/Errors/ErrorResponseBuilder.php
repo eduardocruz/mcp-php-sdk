@@ -74,7 +74,7 @@ class ErrorResponseBuilder
         array $context = []
     ): Response {
         $errorData = self::createErrorData($code, $message, $data, $context);
-        return new Response($request->id, null, $errorData);
+        return new Response($request->requestId, null, $errorData);
     }
 
     /**

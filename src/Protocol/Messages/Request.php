@@ -22,7 +22,7 @@ class Request extends JsonRpcMessage
      * @throws InvalidArgumentException If the request ID is null.
      */
     public function __construct(
-        public string|int $id,
+        public string|int $requestId,
         public string $method,
         public ?array $params = null
     ) {
@@ -37,7 +37,7 @@ class Request extends JsonRpcMessage
     public function toArray(): array
     {
         $result = parent::toArray();
-        $result['id'] = $this->id;
+        $result['id'] = $this->requestId;
         $result['method'] = $this->method;
 
         if ($this->params !== null) {
