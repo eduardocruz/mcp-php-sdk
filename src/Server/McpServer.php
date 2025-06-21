@@ -746,7 +746,7 @@ class McpServer
             if (isset($result['content'])) {
                 return ['content' => $result['content']];
             }
-            
+
             // If no content array, wrap the whole result
             return ['content' => [$result]];
         } catch (\Exception $e) {

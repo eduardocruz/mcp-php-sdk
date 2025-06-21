@@ -216,12 +216,12 @@ class Server
                 $this->handleRequest($message);
                 return;
             }
-            
+
             if ($message instanceof Notification) {
                 $this->handleNotification($message);
                 return;
             }
-            
+
             $this->logger->warning('Received unsupported message type', [
                 'messageType' => get_class($message)
             ]);
