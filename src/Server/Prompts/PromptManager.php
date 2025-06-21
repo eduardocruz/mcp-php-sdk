@@ -6,6 +6,7 @@ use ModelContextProtocol\Protocol\Notifications\NotificationManager;
 use ModelContextProtocol\Server\Prompts\Schema\PromptSchema;
 use ModelContextProtocol\Server\Tools\Schema\Validator;
 use ModelContextProtocol\Server\Tools\Schema\ValidationException;
+use InvalidArgumentException;
 
 /**
  * Manages prompt registration, discovery, and execution
@@ -100,14 +101,14 @@ class PromptManager
         $prompt = $this->getPrompt($name);
 
         if ($prompt === null) {
-            throw new \InvalidArgumentException("Prompt not found: $name");
+            throw new InvalidArgumentException("Prompt not found: $name");
         }
 
         // Validate parameters against schema
         try {
             $this->validator->validate($params, $prompt->getSchema());
         } catch (ValidationException $e) {
-            throw new \InvalidArgumentException("Schema validation failed");
+            throw new InvalidArgumentException("Schema validation failed");
         }
 
         // Execute prompt

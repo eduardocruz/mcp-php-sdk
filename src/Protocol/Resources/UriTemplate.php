@@ -2,6 +2,8 @@
 
 namespace ModelContextProtocol\Protocol\Resources;
 
+use InvalidArgumentException;
+
 /**
  * Implementation of RFC 6570 URI Templates
  */
@@ -78,12 +80,12 @@ class UriTemplate
 
                 $end = strpos($template, "}", $i);
                 if ($end === false) {
-                    throw new \InvalidArgumentException("Unclosed template expression");
+                    throw new InvalidArgumentException("Unclosed template expression");
                 }
 
                 $expressionCount++;
                 if ($expressionCount > self::MAX_TEMPLATE_EXPRESSIONS) {
-                    throw new \InvalidArgumentException(
+                    throw new InvalidArgumentException(
                         "Template contains too many expressions (max " . self::MAX_TEMPLATE_EXPRESSIONS . ")"
                     );
                 }
@@ -396,7 +398,7 @@ class UriTemplate
     private function validateLength(string $str, int $max, string $context): void
     {
         if (strlen($str) > $max) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 "$context exceeds maximum length of $max characters (got " . strlen($str) . ")"
             );
         }

@@ -2,6 +2,8 @@
 
 namespace ModelContextProtocol\Utilities\Logging;
 
+use RuntimeException;
+
 /**
  * A simple console logger implementation that writes to stderr.
  */
@@ -55,13 +57,13 @@ class ConsoleLogger implements LoggerInterface
 
         if ($errorOutput !== null) {
             if (!is_resource($errorOutput)) {
-                throw new \RuntimeException('Error output must be a valid resource');
+                throw new RuntimeException('Error output must be a valid resource');
             }
             $this->errorOutput = $errorOutput;
         } else {
             $errorResource = fopen('php://stderr', 'w');
             if ($errorResource === false) {
-                throw new \RuntimeException('Failed to open error output stream');
+                throw new RuntimeException('Failed to open error output stream');
             }
             $this->errorOutput = $errorResource;
         }

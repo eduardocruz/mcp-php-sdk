@@ -24,6 +24,7 @@ use ModelContextProtocol\Protocol\Constants;
 use ModelContextProtocol\Utilities\HealthMonitor;
 use ModelContextProtocol\Utilities\Cancellation\CancellationManager;
 use ModelContextProtocol\Utilities\Cancellation\CancellationToken;
+use ModelContextProtocol\Protocol\Messages\Request;
 
 /**
  * High-level MCP server that provides a simpler API for working with resources, tools, and prompts.
@@ -230,8 +231,8 @@ class McpServer
     public function handleInitialize($request): array
     {
         // Convert stdClass to Request object if needed
-        if (is_object($request) && !($request instanceof \ModelContextProtocol\Protocol\Messages\Request)) {
-            $requestObj = new \ModelContextProtocol\Protocol\Messages\Request(
+        if (is_object($request) && !($request instanceof Request)) {
+            $requestObj = new Request(
                 $request->id ?? 'test-id',
                 $request->method ?? 'initialize',
                 (array)($request->params ?? [])
@@ -251,8 +252,8 @@ class McpServer
     public function handlePing($request): array
     {
         // Convert stdClass to Request object if needed
-        if (is_object($request) && !($request instanceof \ModelContextProtocol\Protocol\Messages\Request)) {
-            $requestObj = new \ModelContextProtocol\Protocol\Messages\Request(
+        if (is_object($request) && !($request instanceof Request)) {
+            $requestObj = new Request(
                 $request->id ?? 'test-id',
                 $request->method ?? 'ping',
                 (array)($request->params ?? [])

@@ -8,7 +8,10 @@ use ModelContextProtocol\Protocol\Messages\Response;
 use ModelContextProtocol\Protocol\Messages\Notification;
 use ModelContextProtocol\Utilities\Logging\LoggerInterface;
 use ModelContextProtocol\Utilities\Logging\ConsoleLogger;
+use ModelContextProtocol\Protocol\Errors\ErrorResponseBuilder;
 use Throwable;
+use InvalidArgumentException;
+use RuntimeException;
 
 /**
  * Error recovery mechanisms for different failure types.
@@ -76,7 +79,7 @@ class ErrorRecovery
             self::STRATEGY_FALLBACK => $this->executeWithFallback($operation, $options),
             self::STRATEGY_CIRCUIT_BREAKER => $this->executeWithCircuitBreaker($operation, $options),
             self::STRATEGY_GRACEFUL_DEGRADATION => $this->executeWithGracefulDegradation($operation, $options),
-            default => throw new \InvalidArgumentException("Unknown recovery strategy: {$strategy}"),
+            default => throw new InvalidArgumentException("Unknown recovery strategy: {$strategy}"),
         };
     }
 
@@ -163,7 +166,7 @@ class ErrorRecovery
         }
 
         // This should never happen, but we need it for PHPStan
-        throw new \RuntimeException('All retry attempts failed with no exception captured');
+        throw new RuntimeException('All retry attempts failed with no exception captured');
     }
 
     /**
@@ -179,7 +182,7 @@ class ErrorRecovery
         $fallbackOperation = $options['fallback'] ?? null;
 
         if (!$fallbackOperation || !is_callable($fallbackOperation)) {
-            throw new \InvalidArgumentException('Fallback strategy requires a callable fallback operation');
+            throw new InvalidArgumentException('Fallback strategy requires a callable fallback operation');
         }
 
         try {
@@ -240,7 +243,7 @@ class ErrorRecovery
                     'circuit' => $circuitName,
                     'time_until_recovery' => $recoveryTimeout - (time() - $circuit['last_failure_time']),
                 ]);
-                throw new \RuntimeException('Circuit breaker is open');
+                throw new RuntimeException('Circuit breaker is open');
             }
         }
 
@@ -383,7 +386,7 @@ class ErrorRecovery
     private function shouldRetry(Throwable $exception): bool
     {
         // Don't retry validation errors or invalid arguments
-        if ($exception instanceof \InvalidArgumentException) {
+        if ($exception instanceof InvalidArgumentException) {
             return false;
         }
 

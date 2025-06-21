@@ -6,6 +6,7 @@ use ModelContextProtocol\Protocol\Notifications\NotificationManager;
 use ModelContextProtocol\Server\Tools\Schema\ToolSchema;
 use ModelContextProtocol\Server\Tools\Schema\Validator;
 use ModelContextProtocol\Server\Tools\Schema\ValidationException;
+use InvalidArgumentException;
 
 /**
  * Manages tool registration, discovery, and execution
@@ -100,14 +101,14 @@ class ToolManager
         $tool = $this->getTool($name);
 
         if ($tool === null) {
-            throw new \InvalidArgumentException("Tool not found: $name");
+            throw new InvalidArgumentException("Tool not found: $name");
         }
 
         // Validate parameters against schema
         try {
             $this->validator->validate($params, $tool->getSchema());
         } catch (ValidationException $e) {
-            throw new \InvalidArgumentException("Schema validation failed");
+            throw new InvalidArgumentException("Schema validation failed");
         }
 
         // Execute tool

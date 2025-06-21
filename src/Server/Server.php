@@ -23,6 +23,13 @@ use ModelContextProtocol\Transport\TransportInterface;
 use ModelContextProtocol\Utilities\Logging\LoggerInterface;
 use ModelContextProtocol\Utilities\Logging\ConsoleLogger;
 use Throwable;
+use RuntimeException;
+use InvalidArgumentException;
+use Closure;
+use ReflectionFunction;
+use ReflectionMethod;
+use ReflectionException;
+use ReflectionNamedType;
 
 /**
  * An MCP server on top of a pluggable transport.
@@ -372,7 +379,7 @@ class Server
     public function handleInitialize(Request $request): array
     {
         if ($this->initialized) {
-            throw new \RuntimeException('Server already initialized');
+            throw new RuntimeException('Server already initialized');
         }
 
         $params = InitializeParams::fromArray($request->params ?? []);
@@ -479,7 +486,7 @@ class Server
         $uri = $request->params['uri'] ?? null;
 
         if ($uri === null) {
-            throw new \InvalidArgumentException('Missing required parameter: uri');
+            throw new InvalidArgumentException('Missing required parameter: uri');
         }
 
         $options = $request->params['options'] ?? [];
@@ -504,7 +511,7 @@ class Server
         $uri = $request->params['uri'] ?? null;
 
         if ($uri === null) {
-            throw new \InvalidArgumentException('Missing required parameter: uri');
+            throw new InvalidArgumentException('Missing required parameter: uri');
         }
 
         $this->notificationManager->unsubscribeFromResource($uri);
@@ -709,11 +716,11 @@ class Server
     public function registerCapabilities(ServerCapabilities $capabilities): void
     {
         if ($this->initialized) {
-            throw new \RuntimeException('Cannot register capabilities after initialization');
+            throw new RuntimeException('Cannot register capabilities after initialization');
         }
 
         if ($this->transport !== null) {
-            throw new \RuntimeException('Cannot register capabilities after connecting to transport');
+            throw new RuntimeException('Cannot register capabilities after connecting to transport');
         }
 
         $this->capabilities = $this->capabilities->merge($capabilities);
@@ -776,12 +783,12 @@ class Server
         // Use reflection to check if the handler accepts a cancellation token
         try {
             // Handle both closures and callable strings/arrays
-            if ($handler instanceof \Closure) {
-                $reflection = new \ReflectionFunction($handler);
+            if ($handler instanceof Closure) {
+                $reflection = new ReflectionFunction($handler);
             } elseif (is_string($handler) && function_exists($handler)) {
-                $reflection = new \ReflectionFunction($handler);
+                $reflection = new ReflectionFunction($handler);
             } elseif (is_array($handler) && count($handler) === 2) {
-                $reflection = new \ReflectionMethod($handler[0], $handler[1]);
+                $reflection = new ReflectionMethod($handler[0], $handler[1]);
             } else {
                 // For other callable types, skip reflection and use single parameter
                 return $handler($request);
@@ -794,13 +801,13 @@ class Server
                 $paramType = $secondParam->getType();
 
                 if (
-                    $paramType instanceof \ReflectionNamedType &&
+                    $paramType instanceof ReflectionNamedType &&
                     $paramType->getName() === CancellationToken::class
                 ) {
                     return $handler($request, $cancellationToken);
                 }
             }
-        } catch (\ReflectionException $e) {
+        } catch (ReflectionException $e) {
             // If reflection fails, fall back to single parameter call
             $this->logger->debug('Could not reflect handler, using single parameter', [
                 'error' => $e->getMessage()
